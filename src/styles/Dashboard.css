@@ -1,0 +1,429 @@
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Ajustement quand la sidebar est réduite */
+.sidebar.collapsed + .main-content {
+  margin-left: 80px;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.dashboard-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Styles pour le formulaire */
+.form-section {
+  background: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(44,62,80,0.10);
+  margin-bottom: 2rem;
+}
+
+.data-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  row-gap: 1.5rem;
+  column-gap: 2.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.35rem;
+  margin-bottom: 0;
+}
+
+.form-group label {
+  font-weight: 700;
+  color: #1a237e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.08rem;
+  margin-bottom: 0.2rem;
+  min-height: 1.5em;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid #e3e6f0;
+  border-radius: 8px;
+  font-size: 1.08rem;
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  box-shadow: none;
+  height: 48px;
+  display: block;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #1976d2;
+  background: #fff;
+  box-shadow: 0 0 0 2px #1976d22a;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-group input[type="date"] {
+  color: #333;
+}
+
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.form-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.form-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* --- BOUTON AJOUTER PETIT ET À DROITE --- */
+.submit-btn {
+  grid-column: 2/3;
+  justify-self: end;
+  align-self: end;
+  margin-top: 0.5rem;
+  background: linear-gradient(90deg, #1976d2 60%, #00d8ff 100%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1rem;
+  padding: 0.6rem 1.6rem;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  width: auto;
+  min-width: 110px;
+  display: inline-block;
+}
+.submit-btn:hover {
+  background: linear-gradient(90deg, #1565c0 60%, #00bcd4 100%);
+  box-shadow: 0 4px 16px rgba(25,118,210,0.13);
+}
+
+/* Message d'erreur */
+.form-group span[style*='#d32f2f'] {
+  margin-top: 0.2rem;
+  font-size: 0.98em;
+  font-weight: 500;
+  background: #ffebee;
+  color: #d32f2f;
+  border-radius: 6px;
+  padding: 0.3em 0.7em;
+  display: inline-block;
+}
+
+/* Pour que chaque ligne soit alignée entre les deux colonnes */
+.data-form > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1.5rem;
+}
+
+/* Styles pour le tableau */
+.table-section {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px #0001;
+  padding: 2rem 1.5rem 1.5rem 1.5rem;
+  margin-top: 2rem;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+}
+
+.table-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.3rem;
+  color: #1976d2;
+  font-weight: bold;
+  gap: 0.5rem;
+}
+
+.reset-filters-btn {
+  background: #f5f7fa;
+  border: 1px solid #e3e6f0;
+  color: #1976d2;
+  width: 166px;
+  font-weight: 500;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.reset-filters-btn:hover {
+  background: #e3e6f0;
+}
+
+.filters-row {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+  gap: 0.2rem;
+}
+
+.filter-group label {
+  font-size: 0.98rem;
+  color: #222;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+}
+
+.filter-group select,
+.filter-group input[type='text'],
+.filter-group input[type='date'] {
+  padding: 0.5rem 0.8rem;
+  border: 1.5px solid #e3e6f0;
+  border-radius: 7px;
+  background: #f8fafc;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  border-color: #1976d2;
+  background: #fff;
+}
+
+.filter-group input[type='text'] {
+  height: 40px;
+}
+
+.table-container {
+  margin-top: 0.5rem;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px #0001;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+}
+
+.data-table th {
+  background: #f5f7fa;
+  color: #222;
+  font-weight: bold;
+  padding: 0.9rem 0.5rem;
+  text-align: left;
+  font-size: 1.05rem;
+}
+
+.data-table td {
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 1rem;
+}
+
+.no-result-row {
+  background: #f5f7fa;
+  color: #888;
+  text-align: center;
+  font-size: 1.15rem;
+  height: 70px;
+}
+.no-result-icon {
+  font-size: 1.5rem;
+  margin-right: 0.5rem;
+}
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.2rem;
+  font-size: 1rem;
+  color: #444;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+}
+.pagination button {
+  background: #f5f7fa;
+  border: 1px solid #e3e6f0;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 1.1rem;
+  color: #1976d2;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.pagination button:hover {
+  background: #e3e6f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+
+  .sidebar.collapsed + .main-content {
+    margin-left: 0;
+  }
+
+  .data-form {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .search-input,
+  .sort-select {
+    width: 100%;
+  }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .data-form {
+    grid-template-columns: 1fr;
+    row-gap: 1.2rem;
+    column-gap: 0;
+  }
+  .data-form > div {
+    gap: 1.2rem;
+  }
+  .submit-btn {
+    grid-column: 1/2;
+    justify-self: end;
+    align-self: end;
+    margin-top: 0.5rem;
+  }
+}
+
+/* Force le style sur tous les inputs de la barre de filtres */
+.filters-row input[type='text'],
+.filters-row input[type='date'],
+.filters-row select {
+  background: #f8fafc !important;
+  border: 1.5px solid #e3e6f0 !important;
+  border-radius: 7px !important;
+  font-size: 1rem !important;
+  padding: 0.5rem 0.8rem !important;
+  height: 40px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: border-color 0.2s !important;
+}
+
+.filters-row input[type='text']:focus,
+.filters-row input[type='date']:focus,
+.filters-row select:focus {
+  border-color: #1976d2 !important;
+  background: #fff !important;
+}
+
+.filters-row input[type='text'] {
+  background: #f8fafc !important;
+  border: 1.5px solid #e3e6f0 !important;
+  border-radius: 7px !important;
+  font-size: 1rem !important;
+  padding: 0.5rem 0.8rem !important;
+  height: 40px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: border-color 0.2s !important;
+}
+
+.edit-modal-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.edit-modal-buttons button {
+  width: auto !important;
+  min-width: 80px;
+  max-width: 200px;
+  display: inline-block !important;
+  flex: 0 0 auto !important;
+  font-size: 0.9rem;
+  padding: 0.3rem 0.8rem;
+  box-sizing: border-box;
+  margin: 0 !important;
+  background: #5b9bd5;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-modal-buttons button:hover {
+  background: #1976d2;
+}
+
+.edit-modal-buttons .save-btn {
+  background: #43a047 !important;
+}
+
+.edit-modal-buttons .save-btn:hover {
+  background: #2e7d32 !important;
+} 
