@@ -3,6 +3,7 @@
     "axios": "^1.9.0",
     "mysql2": "^3.14.1",
     "react-router-dom": "^7.5.3",
+    "recharts": "^2.7.2",
     "xlsx": "^0.18.5"
   }
 }
