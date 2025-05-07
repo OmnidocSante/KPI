@@ -35,8 +35,8 @@ app.use(async (req, res, next) => {
 
 // Configuration HTTPS
 const httpsOptions = {
-  cert: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/fullchain.pem'),
-  key: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/privkey.pem')
+  cert: fs.readFileSync('/home/omnidoc/certs/fullchain.pem'),
+  key: fs.readFileSync('/home/omnidoc/certs/privkey.pem')
 };
 
 // Routes
