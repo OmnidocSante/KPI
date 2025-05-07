@@ -32,8 +32,23 @@ const Login = () => {
 
     try {
       if (isLogin) {
+        console.log('Tentative de connexion...');
         const result = await login(formData.email, formData.password);
+        console.log('Résultat de la connexion:', result);
+        
         if (result.success) {
+          console.log('Connexion réussie, token reçu:', result.token);
+          // Stocker le token dans le localStorage
+          localStorage.setItem('token', result.token);
+          // Vérifier que le token a bien été stocké
+          const storedToken = localStorage.getItem('token');
+          console.log('Token stocké dans localStorage:', storedToken);
+          
+          if (!storedToken) {
+            setError('Erreur lors du stockage du token');
+            return;
+          }
+          
           navigate('/dashboard');
         } else {
           setError(result.error);
@@ -56,11 +71,22 @@ const Login = () => {
           // Connexion automatique après création de compte
           const loginResult = await login(formData.email, formData.password);
           if (loginResult.success) {
+            console.log('Connexion après création de compte réussie, token reçu:', loginResult.token);
+            localStorage.setItem('token', loginResult.token);
+            const storedToken = localStorage.getItem('token');
+            console.log('Token stocké dans localStorage:', storedToken);
+            
+            if (!storedToken) {
+              setError('Erreur lors du stockage du token');
+              return;
+            }
+            
             navigate('/dashboard');
           }
         }
       }
     } catch (err) {
+      console.error('Erreur lors de la connexion:', err);
       setError(err.response?.data?.message || 'Une erreur est survenue');
     } finally {
       setLoading(false);
@@ -68,6 +94,8 @@ const Login = () => {
   };
 
   const handleLogout = async () => {
+    // Supprimer le token du localStorage lors de la déconnexion
+    localStorage.removeItem('token');
     await logout();
     navigate('/');
   };
@@ -126,6 +154,7 @@ const Login = () => {
               required
             />
           </div>
+          <br/>
           {!isLogin && (
             <div className="form-group">
               <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
@@ -143,6 +172,7 @@ const Login = () => {
             {loading ? 'Chargement...' : isLogin ? 'Se connecter' : 'Créer un compte'}
           </button>
         </form>
+        <br/>
         <div className="switch-form">
           <button
             type="button"
@@ -162,9 +192,7 @@ const Login = () => {
             {isLogin ? 'Créer un compte' : 'Déjà un compte ? Se connecter'}
           </button>
         </div>
-        <button className="logout-btn-inline" onClick={handleLogout} title="Déconnexion">
-          <span className="nav-icon">⏻</span>
-        </button>
+      
       </div>
     </div>
   );

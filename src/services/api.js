@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://kpi.omnidoc.ma:5000';
+const API_URL = 'http://localhost:5000';
 
 // Configuration d'axios
 const api = axios.create({
@@ -29,9 +29,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Rediriger vers la page de connexion si le token est invalide
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Vérifier si le token existe avant de le supprimer
+      const token = localStorage.getItem('token');
+      if (token) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Utiliser window.location.hash pour la redirection avec HashRouter
+        window.location.hash = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -38,6 +38,95 @@ const isAmbulanceRequired = (produitId, produits) => {
   return produit && ['tas', 'tam', 'vsl', 'pf', 'mad'].includes(produit.name.toLowerCase());
 };
 
+// Composant de notification
+const Notification = ({ message, type, onClose }) => {
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(() => {
+      if (isMounted) {
+        onClose();
+      }
+    }, 3000);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [onClose]);
+
+  const closeButtonStyle = {
+    background: 'none',
+    border: 'none',
+    color: 'white',
+    cursor: 'pointer',
+    padding: 0,
+    marginLeft: 12,
+    fontSize: '1.3em',
+    width: 28,
+    height: 28,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.7,
+    transition: 'background 0.2s, opacity 0.2s',
+  };
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: '20px',
+      right: '20px',
+      minWidth: '320px',
+      maxWidth: '90vw',
+      padding: '0.7rem 1.2rem',
+      borderRadius: '8px',
+      backgroundColor: type === 'success' ? '#4caf50' : '#f44336',
+      color: 'white',
+      zIndex: 1000,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.13)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '1rem',
+      fontSize: '1.08em',
+      lineHeight: 1.3,
+      animation: 'slideIn 0.3s ease-out',
+    }}>
+      <span style={{
+        background: type === 'success' ? '#1ecb7b' : '#e57373',
+        borderRadius: '50%',
+        width: 32,
+        height: 32,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+      }}>
+        <span role="img" aria-label={type === 'success' ? 'success' : 'error'} style={{fontSize: '1.3em'}}>
+          {type === 'success' ? '✅' : '❌'}
+        </span>
+      </span>
+      <span style={{flex: 1, wordBreak: 'break-word'}}>{message}</span>
+      <button
+        onClick={onClose}
+        style={closeButtonStyle}
+        onMouseOver={e => {
+          e.currentTarget.style.background = 'rgba(255,255,255,0.13)';
+          e.currentTarget.style.opacity = '1';
+        }}
+        onMouseOut={e => {
+          e.currentTarget.style.background = 'none';
+          e.currentTarget.style.opacity = '0.7';
+        }}
+        aria-label="Fermer la notification"
+      >
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4.5 4.5L13.5 13.5M13.5 4.5L4.5 13.5" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </button>
+    </div>
+  );
+};
+
 const EditForm = React.memo(({ 
   editFormData, 
   onEditChange, 
@@ -154,7 +243,7 @@ const EditForm = React.memo(({
               <input type="text" name="numero" value={editFormData.numero} onChange={onEditChange} placeholder="Numéro" />
             </div>
           </div>
-          <div className="edit-modal-buttons" style={{display:'flex', justifyContent:'flex-end', gap:'1rem',flexDirection:'row', marginLeft:'200%'}}>
+          <div className="edit-modal-buttons">
             <button type="button" onClick={onCancel}>Annuler</button>
             <button type="submit" className="save-btn">Enregistrer</button>
           </div>
@@ -280,6 +369,15 @@ const Dashboard = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
+
+  const [notification, setNotification] = useState({ message: '', type: '' });
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+  };
+
   useEffect(() => {
     // Charger toutes les listes dynamiques
     const fetchData = async () => {
@@ -348,6 +446,9 @@ const Dashboard = () => {
     if (Object.keys(errors).length > 0) return;
     setApiError('');
     try {
+      // Trouver le type de business unit à partir de l'ID
+      const selectedBU = businessUnits.find(bu => String(bu.id) === String(formData.businessUnitType));
+      
       const dataToSend = {
         villeId: formData.ville,
         clientId: isB2C(formData.businessUnitType, businessUnits) ? null : formData.client,
@@ -360,13 +461,12 @@ const Dashboard = () => {
         caHT: Number((Number(formData.caTTC) / 1.2).toFixed(2)),
         caTTC: Number(formData.caTTC),
         fullName: formData.nomPrenom,
-        businessUnitType: formData.businessUnitType,
+        businessUnitType: selectedBU ? selectedBU.businessUnitType : '', // Utiliser le type au lieu de l'ID
         etatdePaiment: formData.etatPaiement,
         numTelephone: formData.numero
       };
       console.log('[POST /globales] dataToSend:', dataToSend);
       await api.post('/globales', dataToSend);
-      // Recharger les globales
       const res = await api.get('/globales');
       setGlobales(res.data);
       setFormData({
@@ -384,11 +484,10 @@ const Dashboard = () => {
         numero: ''
       });
       setFormErrors({});
+      showNotification('Enregistrement ajouté avec succès !', 'success');
     } catch (error) {
       console.error('[POST /globales] error:', error);
-      if (error.response) {
-        console.error('[POST /globales] error.response:', error.response);
-      }
+      showNotification('Erreur lors de l\'ajout de l\'enregistrement', 'error');
       setApiError(error.response?.data?.message || 'Erreur lors de l\'envoi des données');
     }
   };
@@ -479,6 +578,9 @@ const Dashboard = () => {
     if (Object.keys(errors).length > 0) return;
     setApiError('');
     try {
+      // Trouver le type de business unit à partir de l'ID
+      const selectedBU = businessUnits.find(bu => String(bu.id) === String(editFormData.businessUnitType));
+      
       const dataToSend = {
         villeId: editFormData.ville,
         clientId: isB2C(editFormData.businessUnitType, businessUnits) ? null : editFormData.client,
@@ -491,7 +593,7 @@ const Dashboard = () => {
         caHT: Number((Number(editFormData.caTTC) / 1.2).toFixed(2)),
         caTTC: Number(editFormData.caTTC),
         fullName: editFormData.nomPrenom,
-        businessUnitType: editFormData.businessUnitType,
+        businessUnitType: selectedBU ? selectedBU.businessUnitType : '', // Utiliser le type au lieu de l'ID
         etatdePaiment: editFormData.etatPaiement,
         numTelephone: editFormData.numero
       };
@@ -502,7 +604,9 @@ const Dashboard = () => {
       setEditingGlobale(null);
       setEditFormData(null);
       setFormErrors({});
+      showNotification('Enregistrement modifié avec succès !', 'success');
     } catch (error) {
+      showNotification('Erreur lors de la modification', 'error');
       setApiError(error.response?.data?.message || 'Erreur lors de la modification');
     }
   };
@@ -525,15 +629,35 @@ const Dashboard = () => {
       setGlobales(res.data);
       setDeleteModalOpen(false);
       setItemToDelete(null);
+      showNotification('Enregistrement supprimé avec succès !', 'success');
     } catch (error) {
+      showNotification('Erreur lors de la suppression', 'error');
       setApiError('Erreur lors de la suppression');
       setDeleteModalOpen(false);
       setItemToDelete(null);
     }
   };
 
+  const totalRows = globalesFiltered.length;
+  const totalPages = Math.ceil(totalRows / rowsPerPage);
+  const paginatedRows = globalesFiltered.slice(
+    (currentPage - 1) * rowsPerPage,
+    currentPage * rowsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd]);
+
   return (
     <div className="dashboard-layout">
+      {notification.message && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification({ message: '', type: '' })}
+        />
+      )}
       <Sidebar />
       <main className="main-content">
         <div className="dashboard-container">
@@ -714,14 +838,14 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {globalesFiltered.length === 0 ? (
+                  {paginatedRows.length === 0 ? (
                     <tr>
                       <td colSpan={12} className="no-result-row">
                         <span className="no-result-icon">🔍</span>
                         <span>Aucun résultat trouvé</span>
                       </td>
                     </tr>
-                  ) : globalesFiltered.map(item => (
+                  ) : paginatedRows.map(item => (
                     <tr key={item.id}>
                       <td>{item.id}</td>
                       <td>{getVilleName(item.villeId)}</td>
@@ -776,12 +900,20 @@ const Dashboard = () => {
               </table>
             </div>
             <div className="table-footer">
-              <span>
-                Showing {globalesFiltered.length === 0 ? 0 : 1} - {globalesFiltered.length} of {globales.length} records
-              </span>
               <div className="pagination">
-                <button>{'<'}</button>
-                <button>{'>'}</button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  {'<'}
+                </button>
+                <span style={{margin: '0 8px'}}>Page {currentPage} / {totalPages}</span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  {'>'}
+                </button>
               </div>
             </div>
           </div>
