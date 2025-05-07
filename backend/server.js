@@ -66,7 +66,7 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const HTTPS_PORT = process.env.HTTPS_PORT || 443;
+const HTTPS_PORT = process.env.HTTPS_PORT || 5000;
 
 // Créer le serveur HTTPS
 https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
