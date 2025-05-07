@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const produitController = require('../controllers/produitController');
-const auth = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 
 // Routes protégées par le middleware d'authentification
-router.use(auth);
+router.use(verifyToken);
 
 // Routes CRUD pour les produits
 router.get('/', produitController.getAllProduits);

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ambulanceController = require('../controllers/ambulanceController');
-const auth = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 
 // Routes protégées par le middleware d'authentification
-router.use(auth);
+router.use(verifyToken);
 
 // Routes CRUD pour les ambulances
 router.get('/', ambulanceController.getAllAmbulances);

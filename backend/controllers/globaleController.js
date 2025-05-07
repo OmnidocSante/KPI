@@ -145,20 +145,19 @@ const updateGlobale = async (req, res) => {
   }
 };
 
-// Supprimer une globale (soft delete)
+// Supprimer une globale (hard delete)
 const deleteGlobale = async (req, res) => {
   try {
-    const now = new Date();
     const [result] = await db.query(
-      'UPDATE Globales SET destroyTime = ? WHERE id = ? AND destroyTime IS NULL',
-      [now, req.params.id]
+      'DELETE FROM Globales WHERE id = ?',
+      [req.params.id]
     );
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Globale non trouvée' });
     }
 
-    res.json({ message: 'Globale supprimée avec succès' });
+    res.json({ message: 'Globale supprimée définitivement avec succès' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

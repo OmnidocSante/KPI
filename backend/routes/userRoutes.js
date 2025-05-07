@@ -1,13 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const auth = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 
 // Route d'authentification (publique)
 router.post('/login', userController.login);
 
 // Routes protégées par le middleware d'authentification
-router.use(auth);
+router.use(verifyToken);
+
+// Route pour vérifier l'authentification
+router.get('/me', (req, res) => {
+  res.json({ user: req.user });
+});
 
 // Routes CRUD pour les utilisateurs
 router.get('/', userController.getAllUsers);
