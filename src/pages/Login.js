@@ -88,6 +88,7 @@ const Login = () => {
               required
             />
           </div>
+                <br/>
           <button type="submit" disabled={loading}>
             {loading ? 'Chargement...' : 'Se connecter'}
           </button>
