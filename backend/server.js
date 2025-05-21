@@ -1,15 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
 
 // Import des routes
 const ambulanceRoutes = require('./routes/ambulanceRoutes');
 const businessUnitRoutes = require('./routes/businessUnitRoutes');
 const clientRoutes = require('./routes/clientRoutes');
 const medecinRoutes = require('./routes/medecinRoutes');
+const infirmierRoutes = require('./routes/infirmierRoute');
 const produitRoutes = require('./routes/produitRoutes');
 const userRoutes = require('./routes/userRoutes');
 const villeRoutes = require('./routes/villeRoutes');
@@ -33,17 +31,12 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Configuration HTTPS
-const httpsOptions = {
-  cert: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/fullchain.pem'),
-  key: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/privkey.pem')
-};
-
 // Routes
 app.use('/ambulances', ambulanceRoutes);
 app.use('/business-units', businessUnitRoutes);
 app.use('/clients', clientRoutes);
 app.use('/medecins', medecinRoutes);
+app.use('/infirmiers', infirmierRoutes);
 app.use('/produits', produitRoutes);
 app.use('/users', userRoutes);
 app.use('/villes', villeRoutes);
@@ -66,14 +59,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const HTTPS_PORT = process.env.HTTPS_PORT || 443;
-
-// Créer le serveur HTTPS
-https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
-  console.log(`Serveur HTTPS démarré sur le port ${HTTPS_PORT}`);
-});
-
-// Garder le serveur HTTP pour la redirection si nécessaire
 app.listen(PORT, () => {
-  console.log(`Serveur HTTP démarré sur le port ${PORT}`);
+  console.log(`Serveur démarré sur le port ${PORT}`);
 }); 

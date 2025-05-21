@@ -3,7 +3,7 @@ const xlsx = require('xlsx');
 const db = require('./config/db');
 
 // 2. Lecture du fichier Excel
-const workbook = xlsx.readFile('./test.xlsx');
+const workbook = xlsx.readFile('./ff.xlsx');
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
 const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
 

@@ -37,6 +37,7 @@ const createGlobale = async (req, res) => {
       businessUnitId,
       produitId,
       medcienId,
+      infermierId,
       dateCreation,
       Ref,
       caHT,
@@ -44,19 +45,23 @@ const createGlobale = async (req, res) => {
       fullName,
       businessUnitType,
       etatdePaiment,
-      numTelephone
+      numTelephone,
+      note,
+      type
     } = req.body;
 
     const now = new Date();
 
     const [result] = await db.query(
       `INSERT INTO Globales (
-        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId,
-        dateCreation, Ref, caHT, caTTC, fullName, createdAt, updatedAt, businessUnitType, etatdePaiment, numTelephone
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
+        dateCreation, Ref, caHT, caTTC, fullName, createdAt, updatedAt, businessUnitType, 
+        etatdePaiment, numTelephone, note, type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId,
-        dateCreation, Ref, caHT, caTTC, fullName, now, now, businessUnitType, etatdePaiment, numTelephone
+        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
+        dateCreation, Ref, caHT, caTTC, fullName, now, now, businessUnitType, 
+        etatdePaiment, numTelephone, note, type
       ]
     );
 
@@ -68,6 +73,7 @@ const createGlobale = async (req, res) => {
       businessUnitId,
       produitId,
       medcienId,
+      infermierId,
       dateCreation,
       Ref,
       caHT,
@@ -77,9 +83,12 @@ const createGlobale = async (req, res) => {
       updatedAt: now,
       businessUnitType,
       etatdePaiment,
-      numTelephone
+      numTelephone,
+      note,
+      type
     });
   } catch (error) {
+    console.error('Error creating globale:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -94,6 +103,7 @@ const updateGlobale = async (req, res) => {
       businessUnitId,
       produitId,
       medcienId,
+      infermierId,
       dateCreation,
       Ref,
       caHT,
@@ -101,20 +111,24 @@ const updateGlobale = async (req, res) => {
       fullName,
       businessUnitType,
       etatdePaiment,
-      numTelephone
+      numTelephone,
+      note,
+      type
     } = req.body;
 
     const now = new Date();
 
     const [result] = await db.query(
       `UPDATE Globales SET
-        villeId = ?, clientId = ?, aumbulanceId = ?, businessUnitId = ?, produitId = ?, medcienId = ?,
-        dateCreation = ?, Ref = ?, caHT = ?, caTTC = ?, fullName = ?, updatedAt = ?, businessUnitType = ?, etatdePaiment = ?, numTelephone = ?
-        WHERE id = ? AND destroyTime IS NULL`,
+        villeId = ?, clientId = ?, aumbulanceId = ?, businessUnitId = ?, produitId = ?, 
+        medcienId = ?, infermierId = ?, dateCreation = ?, Ref = ?, caHT = ?, caTTC = ?, 
+        fullName = ?, updatedAt = ?, businessUnitType = ?, etatdePaiment = ?, 
+        numTelephone = ?, note = ?, type = ?
+        WHERE id = ? AND destroyTime IS NULL`,  
       [
-        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId,
-        dateCreation, Ref, caHT, caTTC, fullName, now, businessUnitType, etatdePaiment, numTelephone,
-        req.params.id
+        villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
+        dateCreation, Ref, caHT, caTTC, fullName, now, businessUnitType, etatdePaiment, 
+        numTelephone, note, type, req.params.id
       ]
     );
 
@@ -130,6 +144,7 @@ const updateGlobale = async (req, res) => {
       businessUnitId,
       produitId,
       medcienId,
+      infermierId,
       dateCreation,
       Ref,
       caHT,
@@ -138,9 +153,12 @@ const updateGlobale = async (req, res) => {
       updatedAt: now,
       businessUnitType,
       etatdePaiment,
-      numTelephone
+      numTelephone,
+      note,
+      type
     });
   } catch (error) {
+    console.error('Error updating globale:', error);
     res.status(500).json({ error: error.message });
   }
 };
