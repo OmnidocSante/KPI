@@ -41,5 +41,12 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+// Fonction utilitaire pour récupérer le nom d'un élément
+const getNom = (array, id, field) => {
+  const item = array.find(item => String(item.id) === String(id));
+  return item ? item[field] : id;
+};
+
+export { getNom };
 
 export default api; 

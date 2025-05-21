@@ -26,16 +26,24 @@ const isB2C = (buId, businessUnits) => {
   return bu && bu.businessUnitType === 'b2c';
 };
 
-// Add helper function isMedecinRequired after the isB2C function
+// Modifier la fonction isMedecinRequired pour inclure les infirmiers
 const isMedecinRequired = (produitId, produits) => {
   const produit = produits.find(p => String(p.id) === String(produitId));
-  return produit && ['acte medecin', 'acte avion sanitaire', 'tam'].includes(produit.name.toLowerCase());
+  const isRequired = produit && ['acte medecin', 'acte avion sanitaire', 'tam', 'acte infirmier'].includes(produit.name.toLowerCase());
+  return isRequired;
 };
 
 // Add helper function isAmbulanceRequired after the isMedecinRequired function
 const isAmbulanceRequired = (produitId, produits) => {
   const produit = produits.find(p => String(p.id) === String(produitId));
   return produit && ['tas', 'tam', 'vsl', 'pf', 'mad'].includes(produit.name.toLowerCase());
+};
+
+// Add helper function isInfirmierAct after the isAmbulanceRequired function
+const isInfirmierAct = (produitId, produits) => {
+  const produit = produits.find(p => String(p.id) === String(produitId));
+  const isInfirmier = produit && produit.name.toLowerCase() === 'acte infirmier';
+  return isInfirmier;
 };
 
 // Composant de notification
@@ -139,7 +147,8 @@ const EditForm = React.memo(({
   produits,
   medciens,
   ambulances,
-  villes 
+  villes,
+  infirmiers
 }) => {
   return (
     <div style={{
@@ -185,10 +194,25 @@ const EditForm = React.memo(({
               </select>
             </div>
             <div className="form-group">
-              <label style={{fontWeight:'bold'}}><span role="img" aria-label="doctor">🧑‍⚕️</span> Médecin</label>
-              <select name="medecin" value={isMedecinRequired(editFormData.produit, produits) ? editFormData.medecin : ''} onChange={onEditChange} disabled={!isMedecinRequired(editFormData.produit, produits)}>
-                <option value="">Sélectionnez un médecin</option>
-                {medciens.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              <label style={{fontWeight:'bold'}}>
+                <span role="img" aria-label="doctor">🧑‍⚕️</span> 
+                {isInfirmierAct(editFormData.produit, produits) ? 'Infirmier' : 'Médecin'}
+              </label>
+              <select 
+                name="medecin" 
+                value={isMedecinRequired(editFormData.produit, produits) ? editFormData.medecin : ''} 
+                onChange={onEditChange} 
+                disabled={!isMedecinRequired(editFormData.produit, produits)}
+              >
+                <option value="">Sélectionnez {isInfirmierAct(editFormData.produit, produits) ? 'un infirmier' : 'un médecin'}</option>
+                {isInfirmierAct(editFormData.produit, produits) 
+                  ? infirmiers
+                      .sort((a, b) => a.nom.localeCompare(b.nom))
+                      .map(i => <option key={i.id} value={i.id}>{i.nom}</option>)
+                  : medciens
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map(m => <option key={m.id} value={m.id}>{m.name}</option>)
+                }
               </select>
             </div>
             <div className="form-group">
@@ -243,7 +267,34 @@ const EditForm = React.memo(({
               <input type="text" name="numero" value={editFormData.numero} onChange={onEditChange} placeholder="Numéro" />
             </div>
           </div>
-          <div className="edit-modal-buttons">
+          <div className="form-group">
+            <label style={{fontWeight:'bold'}}><span role="img" aria-label="note">📝</span> Note</label>
+            <input 
+              type="text" 
+              name="note" 
+              value={editFormData.note} 
+              onChange={onEditChange} 
+              placeholder="Ajoutez une note ici"
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontSize: '14px',
+                transition: 'border-color 0.2s'
+              }}
+            />
+          </div>
+          <div className="form-group">
+            <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> Moyen de Paiement</label>
+            <select name="type" value={editFormData.type || ''} onChange={onEditChange}>
+              <option value="">Non spécifié</option>
+              <option value="espece">Espèce</option>
+              <option value="virement">Virement</option>
+              <option value="cheque">Chèque</option>
+            </select>
+          </div>
+          <div className="edit-modal-buttons" style={{display: 'flex', flexDirection: 'row', gap: '1rem'}}>
             <button type="button" onClick={onCancel}>Annuler</button>
             <button type="submit" className="save-btn">Enregistrer</button>
           </div>
@@ -333,7 +384,9 @@ const Dashboard = () => {
     etatPaiement: 'Non',
     dateIntervention: '',
     caTTC: '0',
-    numero: ''
+    numero: '',
+    note: '',
+    type: 'espece'
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -351,6 +404,7 @@ const Dashboard = () => {
   const [ambulances, setAmbulances] = useState([]);
   const [businessUnits, setBusinessUnits] = useState([]);
   const [medciens, setMedciens] = useState([]);
+  const [infirmiers, setInfirmiers] = useState([]);
   const [produits, setProduits] = useState([]);
   const [globales, setGlobales] = useState([]);
   const [editingGlobale, setEditingGlobale] = useState(null);
@@ -382,13 +436,14 @@ const Dashboard = () => {
     // Charger toutes les listes dynamiques
     const fetchData = async () => {
       try {
-        const [villesRes, clientsRes, ambulancesRes, businessUnitsRes, medecinsRes, produitsRes] = await Promise.all([
+        const [villesRes, clientsRes, ambulancesRes, businessUnitsRes, medecinsRes, produitsRes, infirmiersRes] = await Promise.all([
           api.get('/villes'),
           api.get('/clients'),
           api.get('/ambulances'),
           api.get('/business-units'),
           api.get('/medecins'),
           api.get('/produits'),
+          api.get('/infirmiers'),
         ]);
         setVilles(villesRes.data);
         setClients(clientsRes.data);
@@ -396,8 +451,9 @@ const Dashboard = () => {
         setBusinessUnits(businessUnitsRes.data);
         setMedciens(medecinsRes.data);
         setProduits(produitsRes.data);
+        setInfirmiers(infirmiersRes.data);
       } catch (err) {
-        // Optionnel : afficher une erreur
+        console.error('Erreur lors du chargement des données:', err);
       }
     };
     fetchData();
@@ -416,9 +472,11 @@ const Dashboard = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let newFormData = { ...formData, [name]: value };
+    
     if (name === 'businessUnitType' && isB2C(value, businessUnits)) {
       newFormData.client = '';
     }
+    
     if (name === 'produit') {
       if (!isMedecinRequired(value, produits)) {
         newFormData.medecin = '';
@@ -427,6 +485,7 @@ const Dashboard = () => {
         newFormData.ambulance = '';
       }
     }
+    
     setFormData(newFormData);
   };
 
@@ -446,8 +505,15 @@ const Dashboard = () => {
     if (Object.keys(errors).length > 0) return;
     setApiError('');
     try {
-      // Trouver le type de business unit à partir de l'ID
       const selectedBU = businessUnits.find(bu => String(bu.id) === String(formData.businessUnitType));
+      
+      // Determine if the selected professional is an infirmier or medecin
+      const selectedInfirmier = infirmiers.find(i => String(i.id) === String(formData.medecin));
+      const selectedMedecin = medciens.find(m => String(m.id) === String(formData.medecin));
+      
+      // Set the correct ID based on the professional type
+      const medcienId = selectedMedecin ? formData.medecin : null;
+      const infermierId = selectedInfirmier ? formData.medecin : null;
       
       const dataToSend = {
         villeId: formData.ville,
@@ -455,18 +521,25 @@ const Dashboard = () => {
         aumbulanceId: isAmbulanceRequired(formData.produit, produits) ? formData.ambulance : null,
         businessUnitId: formData.businessUnitType,
         produitId: formData.produit,
-        medcienId: isMedecinRequired(formData.produit, produits) ? formData.medecin : null,
+        medcienId: medcienId,
+        infermierId: infermierId,
         dateCreation: toMySQLDatetime(formData.dateIntervention),
         Ref: formData.reference,
         caHT: Number((Number(formData.caTTC) / 1.2).toFixed(2)),
         caTTC: Number(formData.caTTC),
         fullName: formData.nomPrenom,
-        businessUnitType: selectedBU ? selectedBU.businessUnitType : '', // Utiliser le type au lieu de l'ID
+        businessUnitType: selectedBU ? selectedBU.businessUnitType : '',
         etatdePaiment: formData.etatPaiement,
-        numTelephone: formData.numero
+        numTelephone: formData.numero,
+        note: formData.note,
+        type: formData.type
       };
-      console.log('[POST /globales] dataToSend:', dataToSend);
-      await api.post('/globales', dataToSend);
+
+      console.log('Sending data to server:', dataToSend);
+      
+      const response = await api.post('/globales', dataToSend);
+      console.log('Server response:', response.data);
+      
       const res = await api.get('/globales');
       setGlobales(res.data);
       setFormData({
@@ -481,14 +554,24 @@ const Dashboard = () => {
         etatPaiement: 'Non',
         dateIntervention: '', 
         caTTC: '0',
-        numero: ''
+        numero: '',
+        note: '',
+        type: 'espece'
       });
       setFormErrors({});
       showNotification('Enregistrement ajouté avec succès !', 'success');
     } catch (error) {
-      console.error('[POST /globales] error:', error);
-      showNotification('Erreur lors de l\'ajout de l\'enregistrement', 'error');
-      setApiError(error.response?.data?.message || 'Erreur lors de l\'envoi des données');
+      console.error('Error creating globale:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config
+      });
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de l\'envoi des données';
+      showNotification(`Erreur lors de l'ajout de l'enregistrement: ${errorMessage}`, 'error');
+      setApiError(errorMessage);
     }
   };
 
@@ -518,7 +601,7 @@ const Dashboard = () => {
   // Helpers pour afficher les noms à partir des IDs
   const getNom = (arr, id, field = 'name') => {
     const found = arr.find(x => String(x.id) === String(id));
-    return found ? found[field] : '';
+    return found ? (found[field] || found.nom) : ''; // Essayer field ou nom
   };
   const getClientName = id => getNom(clients, id, 'clientFullName');
   const getVilleName = id => getNom(villes, id, 'name');
@@ -534,14 +617,16 @@ const Dashboard = () => {
       client: globale.clientId,
       produit: globale.produitId,
       nomPrenom: globale.fullName,
-      medecin: globale.medcienId,
+      medecin: isInfirmierAct(globale.produitId, produits) ? globale.infermierId : globale.medcienId,
       ambulance: globale.aumbulanceId,
       ville: globale.villeId,
       reference: globale.Ref,
       etatPaiement: globale.etatdePaiment,
-      dateIntervention: globale.dateCreation ? globale.dateCreation.split(' ')[0] : '',
+      dateIntervention: globale.dateCreation ? new Date(globale.dateCreation).toISOString().split('T')[0] : '',
       caTTC: globale.caTTC.toString(),
-      numero: globale.numTelephone
+      numero: globale.numTelephone,
+      note: globale.note || '',
+      type: globale.type || null
     });
     setShowEditModal(true);
   };
@@ -587,7 +672,8 @@ const Dashboard = () => {
         aumbulanceId: isAmbulanceRequired(editFormData.produit, produits) ? editFormData.ambulance : null,
         businessUnitId: editFormData.businessUnitType,
         produitId: editFormData.produit,
-        medcienId: isMedecinRequired(editFormData.produit, produits) ? editFormData.medecin : null,
+        medcienId: isMedecinRequired(editFormData.produit, produits) && !isInfirmierAct(editFormData.produit, produits) ? editFormData.medecin : null,
+        infermierId: isInfirmierAct(editFormData.produit, produits) ? editFormData.medecin : null,
         dateCreation: toMySQLDatetime(editFormData.dateIntervention),
         Ref: editFormData.reference,
         caHT: Number((Number(editFormData.caTTC) / 1.2).toFixed(2)),
@@ -595,7 +681,9 @@ const Dashboard = () => {
         fullName: editFormData.nomPrenom,
         businessUnitType: selectedBU ? selectedBU.businessUnitType : '', // Utiliser le type au lieu de l'ID
         etatdePaiment: editFormData.etatPaiement,
-        numTelephone: editFormData.numero
+        numTelephone: editFormData.numero,
+        note: editFormData.note,
+        type: editFormData.type
       };
       await api.put(`/globales/${editingGlobale.id}`, dataToSend);
       const res = await api.get('/globales');
@@ -685,10 +773,33 @@ const Dashboard = () => {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="doctor">🧑‍⚕️</span> Médecin</label>
-                  <select name="medecin" value={isMedecinRequired(formData.produit, produits) ? formData.medecin : ''} onChange={handleChange} disabled={!isMedecinRequired(formData.produit, produits)}>
-                    <option value="">Sélectionnez un médecin</option>
-                    {medciens.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  <label style={{fontWeight:'bold'}}>
+                    <span role="img" aria-label="doctor">🧑‍⚕️</span> 
+                    {isInfirmierAct(formData.produit, produits) ? 'Infirmier' : 'Médecin'}
+                  </label>
+                  <select 
+                    name="medecin" 
+                    value={formData.medecin} 
+                    onChange={handleChange} 
+                    disabled={!isMedecinRequired(formData.produit, produits)}
+                  >
+                    <option value="">Sélectionnez {isInfirmierAct(formData.produit, produits) ? 'un infirmier' : 'un médecin'}</option>
+                    {isInfirmierAct(formData.produit, produits) 
+                      ? infirmiers
+                          .sort((a, b) => a.nom.localeCompare(b.nom))
+                          .map(i => (
+                            <option key={i.id} value={i.id}>
+                              {i.nom}
+                            </option>
+                          ))
+                      : medciens
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map(m => (
+                            <option key={m.id} value={m.id}>
+                              {m.name}
+                            </option>
+                          ))
+                    }
                   </select>
                 </div>
                 <div className="form-group">
@@ -742,6 +853,32 @@ const Dashboard = () => {
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="phone">📞</span> Numéro</label>
                   <input type="text" name="numero" value={formData.numero} onChange={handleChange} placeholder="Numéro" />
                 </div>
+              </div>
+              <div className="form-group">
+                <label style={{fontWeight:'bold'}}><span role="img" aria-label="note">📝</span> Note</label>
+                <input 
+                  type="text" 
+                  name="note" 
+                  value={formData.note} 
+                  onChange={handleChange} 
+                  placeholder="Ajoutez une note ici"
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    fontSize: '14px',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+              </div>
+              <div className="form-group">
+                <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> Moyen de Paiement</label>
+                <select name="type" value={formData.type} onChange={handleChange}>
+                  <option value="espece">Espèce</option>
+                  <option value="virement">Virement</option>
+                  <option value="cheque">Chèque</option>
+                </select>
               </div>
               <button type="submit" className="submit-btn" style={{gridColumn:'1/3', marginTop:'1rem'}}>Ajouter</button>
             </form>
@@ -830,7 +967,7 @@ const Dashboard = () => {
                     <th>Ref</th>
                     <th>BU</th>
                     <th>Client</th>
-                    <th>Medcien</th>
+                    <th>Médecin</th>
                     <th>CA TTC</th>
                     <th>Date d'intervention</th>
                     <th>Etat de paiement</th>
@@ -854,7 +991,12 @@ const Dashboard = () => {
                       <td>{item.Ref}</td>
                       <td>{getBUType(item.businessUnitId)}</td>
                       <td>{getClientName(item.clientId)}</td>
-                      <td>{getMedecinName(item.medcienId)}</td>
+                      <td>
+                        {isInfirmierAct(item.produitId, produits) 
+                          ? getNom(infirmiers, item.infermierId, 'nom')
+                          : getMedecinName(item.medcienId)
+                        }
+                      </td>
                       <td>{item.caTTC}</td>
                       <td>{formatDateFr(item.dateCreation)}</td>
                       <td>{item.etatdePaiment}</td>
@@ -933,6 +1075,7 @@ const Dashboard = () => {
               medciens={medciens}
               ambulances={ambulances}
               villes={villes}
+              infirmiers={infirmiers}
             />
           )}
 
