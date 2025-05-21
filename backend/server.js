@@ -3,7 +3,6 @@ const cors = require('cors');
 const db = require('./config/db');
 const https = require('https');
 const fs = require('fs');
-const path = require('path');
 
 
 // Configuration HTTPS
