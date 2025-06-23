@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
 import api from '../services/api';
+import * as XLSX from 'xlsx';
 
 function toMySQLDatetime(dateString) {
   if (!dateString) return null;
@@ -231,7 +232,24 @@ const EditForm = React.memo(({
             </div>
             <div className="form-group">
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="money">💶</span> CA TTC</label>
-              <input type="number" name="caTTC" value={editFormData.caTTC} onChange={onEditChange} min="0" />
+              <input 
+                type="text" 
+                name="caTTC" 
+                value={editFormData.caTTC} 
+                onChange={(e) => {
+                  // Permettre uniquement les nombres, la virgule et le point
+                  const value = e.target.value.replace(/[^0-9,.]/g, '');
+                  // Remplacer la virgule par un point pour le stockage
+                  const numericValue = value.replace(',', '.');
+                  onEditChange({
+                    target: {
+                      name: 'caTTC',
+                      value: numericValue
+                    }
+                  });
+                }}
+                placeholder="0.00 ou 0,00"
+              />
             </div>
           </div>
           {/* Colonne 2 */}
@@ -515,6 +533,9 @@ const Dashboard = () => {
       const medcienId = selectedMedecin ? formData.medecin : null;
       const infermierId = selectedInfirmier ? formData.medecin : null;
       
+      // Convertir la valeur CA TTC en nombre, en gérant à la fois la virgule et le point
+      const caTTCValue = parseFloat(formData.caTTC.replace(',', '.'));
+      
       const dataToSend = {
         villeId: formData.ville,
         clientId: isB2C(formData.businessUnitType, businessUnits) ? null : formData.client,
@@ -525,8 +546,8 @@ const Dashboard = () => {
         infermierId: infermierId,
         dateCreation: toMySQLDatetime(formData.dateIntervention),
         Ref: formData.reference,
-        caHT: Number((Number(formData.caTTC) / 1.2).toFixed(2)),
-        caTTC: Number(formData.caTTC),
+        caHT: Number((caTTCValue / 1.2).toFixed(2)),
+        caTTC: caTTCValue,
         fullName: formData.nomPrenom,
         businessUnitType: selectedBU ? selectedBU.businessUnitType : '',
         etatdePaiment: formData.etatPaiement,
@@ -634,6 +655,13 @@ const Dashboard = () => {
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     let newEditFormData = { ...editFormData, [name]: value };
+    
+    if (name === 'caTTC') {
+      // Permettre uniquement les nombres, la virgule et le point
+      const cleanValue = value.replace(/[^0-9,.]/g, '');
+      newEditFormData.caTTC = cleanValue;
+    }
+    
     if (name === 'businessUnitType' && isB2C(value, businessUnits)) {
       newEditFormData.client = '';
     }
@@ -663,8 +691,10 @@ const Dashboard = () => {
     if (Object.keys(errors).length > 0) return;
     setApiError('');
     try {
-      // Trouver le type de business unit à partir de l'ID
       const selectedBU = businessUnits.find(bu => String(bu.id) === String(editFormData.businessUnitType));
+      
+      // Convertir la valeur CA TTC en nombre, en gérant à la fois la virgule et le point
+      const caTTCValue = parseFloat(editFormData.caTTC.replace(',', '.'));
       
       const dataToSend = {
         villeId: editFormData.ville,
@@ -676,10 +706,10 @@ const Dashboard = () => {
         infermierId: isInfirmierAct(editFormData.produit, produits) ? editFormData.medecin : null,
         dateCreation: toMySQLDatetime(editFormData.dateIntervention),
         Ref: editFormData.reference,
-        caHT: Number((Number(editFormData.caTTC) / 1.2).toFixed(2)),
-        caTTC: Number(editFormData.caTTC),
+        caHT: Number((caTTCValue / 1.2).toFixed(2)),
+        caTTC: caTTCValue,
         fullName: editFormData.nomPrenom,
-        businessUnitType: selectedBU ? selectedBU.businessUnitType : '', // Utiliser le type au lieu de l'ID
+        businessUnitType: selectedBU ? selectedBU.businessUnitType : '',
         etatdePaiment: editFormData.etatPaiement,
         numTelephone: editFormData.numero,
         note: editFormData.note,
@@ -736,6 +766,58 @@ const Dashboard = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd]);
+
+  const handleDownloadExcel = () => {
+    // Préparer les données pour l'export
+    const exportData = globalesFiltered.map(item => ({
+      'ID': item.id,
+      'Ville': getVilleName(item.villeId),
+      'Produit': getProduitName(item.produitId),
+      'Ambulance': getAmbulanceName(item.aumbulanceId),
+      'Référence': item.Ref,
+      'Business Unit': getBUType(item.businessUnitId),
+      'Client': getClientName(item.clientId),
+      'Médecin/Infirmier': isInfirmierAct(item.produitId, produits) 
+        ? getNom(infirmiers, item.infermierId, 'nom')
+        : getMedecinName(item.medcienId),
+      'CA TTC': item.caTTC,
+      'Date d\'intervention': formatDateFr(item.dateCreation),
+      'État de paiement': item.etatdePaiment,
+      'Numéro': item.numTelephone,
+      'Note': item.note || '',
+      'Type de paiement': item.type || ''
+    }));
+
+    // Créer un nouveau classeur
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Ajuster la largeur des colonnes
+    const colWidths = [
+      { wch: 5 },  // ID
+      { wch: 15 }, // Ville
+      { wch: 20 }, // Produit
+      { wch: 15 }, // Ambulance
+      { wch: 15 }, // Référence
+      { wch: 15 }, // Business Unit
+      { wch: 20 }, // Client
+      { wch: 20 }, // Médecin/Infirmier
+      { wch: 10 }, // CA TTC
+      { wch: 15 }, // Date d'intervention
+      { wch: 15 }, // État de paiement
+      { wch: 15 }, // Numéro
+      { wch: 30 }, // Note
+      { wch: 15 }  // Type de paiement
+    ];
+    ws['!cols'] = colWidths;
+
+    // Ajouter la feuille au classeur
+    XLSX.utils.book_append_sheet(wb, ws, "Globale Records");
+
+    // Générer le fichier Excel
+    const fileName = `Globale_Records_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  };
 
   return (
     <div className="dashboard-layout">
@@ -818,7 +900,22 @@ const Dashboard = () => {
                 </div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="money">💶</span> CA TTC</label>
-                  <input type="number" name="caTTC" value={formData.caTTC} onChange={handleChange} min="0" />
+                  <input 
+                    type="text" 
+                    name="caTTC" 
+                    value={formData.caTTC} 
+                    onChange={(e) => {
+                      // Permettre uniquement les nombres, la virgule et le point
+                      const value = e.target.value.replace(/[^0-9,.]/g, '');
+                      // Remplacer la virgule par un point pour le stockage
+                      const numericValue = value.replace(',', '.');
+                      setFormData({
+                        ...formData,
+                        caTTC: value
+                      });
+                    }}
+                    placeholder="0.00 ou 0,00"
+                  />
                 </div>
               </div>
               {/* Colonne 2 */}
@@ -891,20 +988,41 @@ const Dashboard = () => {
                 <span role="img" aria-label="table" style={{fontSize: '1.3em', marginRight: 8}}>📋</span>
                 <span>Globale Records</span>
               </div>
-              <button
-                className="reset-filters-btn"
-                onClick={() => {
-                  setFilterClient('');
-                  setFilterAmbulance('');
-                  setFilterRef('');
-                  setFilterBU('');
-                  setFilterDateStart('');
-                  setFilterDateEnd('');
-                }}
-              >
-                <span role="img" aria-label="reset" style={{marginRight: 6}}>🔄</span>
-                Reset Filters
-              </button>
+              <div style={{display: 'flex', gap: '1rem'}}>
+                <button
+                  className="download-excel-btn"
+                  onClick={handleDownloadExcel}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: '#4caf50',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <span role="img" aria-label="download">📥</span>
+                  Télécharger Excel
+                </button>
+                <button
+                  className="reset-filters-btn"
+                  onClick={() => {
+                    setFilterClient('');
+                    setFilterAmbulance('');
+                    setFilterRef('');
+                    setFilterBU('');
+                    setFilterDateStart('');
+                    setFilterDateEnd('');
+                  }}
+                >
+                  <span role="img" aria-label="reset" style={{marginRight: 6}}>🔄</span>
+                  Reset Filters
+                </button>
+              </div>
             </div>
             <div className="filters-row">
               <div className="filter-group">

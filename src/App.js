@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
@@ -7,14 +7,7 @@ import Data from './pages/Data';
 import './App.css';
 
 function App() {
-  const { isAuthenticated, loading, checkAuth } = useAuth();
-
-  useEffect(() => {
-    const verifyAuth = async () => {
-      await checkAuth();
-    };
-    verifyAuth();
-  }, [checkAuth]);
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return <div>Chargement...</div>;

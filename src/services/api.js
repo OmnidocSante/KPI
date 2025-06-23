@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://kpi.omnidoc.ma:4300/';
+const API_URL = 'https://kpi.omnidoc.ma:4300'
 
 // Configuration d'axios
 const api = axios.create({
@@ -34,8 +34,10 @@ api.interceptors.response.use(
       if (token) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // Utiliser window.location.hash pour la redirection avec HashRouter
-        window.location.hash = '/login';
+        // Ne rediriger que si nous ne sommes pas déjà sur la page de login
+        if (!window.location.hash.includes('/login')) {
+          window.location.hash = '/login';
+        }
       }
     }
     return Promise.reject(error);

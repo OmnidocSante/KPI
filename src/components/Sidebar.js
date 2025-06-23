@@ -12,7 +12,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { path: '/dashboard', label: 'Tableau de bord', icon: '📊' },
-    { path: '/data', label: 'Données', icon: '📈' },
+   // { path: '/data', label: 'Données', icon: '📈' },
     { path: '/ambulances', label: 'Ambulances', icon: '🚑' },
     { path: '/clients', label: 'Clients', icon: '👥' },
     { path: '/medecins', label: 'Médecins', icon: '🩺' },

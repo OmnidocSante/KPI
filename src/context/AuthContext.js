@@ -14,49 +14,88 @@ export const AuthProvider = ({ children }) => {
     
     if (!token || !userData) {
       setUser(null);
+      setLoading(false);
       return false;
     }
 
     try {
-      // Configurer le token dans l'API
+      // Vérifier d'abord si le token est expiré
+      const tokenData = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = tokenData.exp * 1000; // Convertir en millisecondes
+      
+      if (Date.now() >= expirationTime) {
+        // Token expiré
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setLoading(false);
+        return false;
+      }
+
+      // Si le token est valide, configurer l'API et vérifier avec le serveur
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      // Vérifier si le token est valide
+      // Vérifier si le token est valide côté serveur
       const response = await api.get('/users/me');
       if (response.data && response.data.user) {
         setUser(JSON.parse(userData));
+        setLoading(false);
         return true;
       }
     } catch (error) {
       console.error('Erreur de vérification du token:', error);
-      // En cas d'erreur, nettoyer le localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       setUser(null);
+      setLoading(false);
     }
     return false;
   };
 
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId = null;
+
     const initializeAuth = async () => {
+      if (!isMounted) return;
+      
       try {
         const isAuth = await checkAuth();
-        if (!isAuth) {
+        if (!isAuth && isMounted) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de l\'auth:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
+        if (isMounted) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // Vérifier l'authentification immédiatement
     initializeAuth();
+
+    // Configurer une vérification périodique (toutes les 5 minutes)
+    timeoutId = setInterval(() => {
+      if (isMounted) {
+        initializeAuth();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearInterval(timeoutId);
+      }
+    };
   }, []);
 
   const login = async (email, password) => {

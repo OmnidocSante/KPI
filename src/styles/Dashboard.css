@@ -13,7 +13,7 @@
 
 /* Ajustement quand la sidebar est réduite */
 .sidebar.collapsed + .main-content {
-  margin-left: 80px;
+  margin-left: 100px;
 }
 
 .dashboard-header {
@@ -430,4 +430,16 @@
 
 .edit-modal-buttons .save-btn:hover {
   background: #2e7d32 !important;
+}
+
+.data-main {
+  flex: 1;
+  padding: 2rem;
+  margin-left: 250px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Ajustement quand la sidebar est réduite */
+.sidebar.collapsed + .data-main {
+  margin-left: 100px;
 } 

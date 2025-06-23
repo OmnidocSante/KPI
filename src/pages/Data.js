@@ -452,7 +452,7 @@ const Data = () => {
               {getSelectedText(filterProduit, produits)}
             </button>
             {openDropdown === 'produit' && (
-              <div style={dropdownContentStyle}>
+              <div style={{...dropdownContentStyle, minWidth: '240px'}}>
                 {produits.map(p => (
                   <div 
                     key={p.id} 
