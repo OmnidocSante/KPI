@@ -49,6 +49,40 @@ const getNom = (array, id, field) => {
   return item ? item[field] : id;
 };
 
+// Fonctions pour l'API Ambulances
+export const fetchAmbulances = () => api.get('/ambulances');
+export const fetchAmbulanceById = (id) => api.get(`/ambulances/${id}`);
+export const createAmbulance = (data) => api.post('/ambulances', data);
+export const updateAmbulance = (id, data) => api.put(`/ambulances/${id}`, data);
+export const deleteAmbulance = (id) => api.delete(`/ambulances/${id}`);
+
+// Fonctions pour l'API Clients
+export const fetchClients = () => api.get('/clients');
+export const fetchClientById = (id) => api.get(`/clients/${id}`);
+export const createClient = (data) => api.post('/clients', data);
+export const updateClient = (id, data) => api.put(`/clients/${id}`, data);
+export const deleteClient = (id) => api.delete(`/clients/${id}`);
+export const searchClients = (query) => api.get(`/clients/search?query=${encodeURIComponent(query)}`);
+
+// Fonctions pour l'API Villes
+export const fetchVilles = () => api.get('/villes');
+
+// Fonctions pour l'API Médecins
+export const fetchMedecins = () => api.get('/medecins');
+export const fetchMedecinById = (id) => api.get(`/medecins/${id}`);
+export const createMedecin = (data) => api.post('/medecins', data);
+export const updateMedecin = (id, data) => api.put(`/medecins/${id}`, data);
+export const deleteMedecin = (id) => api.delete(`/medecins/${id}`);
+
+// Fonctions pour l'API Produits
+export const fetchProduits = () => api.get('/produits');
+export const fetchProduitById = (id) => api.get(`/produits/${id}`);
+export const createProduit = (data) => api.post('/produits', data);
+export const updateProduit = (id, data) => api.put(`/produits/${id}`, data);
+export const deleteProduit = (id) => api.delete(`/produits/${id}`);
+
+
+
 export { getNom };
 
 export default api; 

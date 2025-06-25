@@ -10,7 +10,9 @@
   margin-left: 250px;
   transition: margin-left 0.3s ease;
 }
-
+.data-table th {
+  text-align: center;
+}
 /* Ajustement quand la sidebar est réduite */
 .sidebar.collapsed + .main-content {
   margin-left: 100px;
@@ -265,7 +267,7 @@
   color: #222;
   font-weight: bold;
   padding: 0.9rem 0.5rem;
-  text-align: left;
+  text-align: center;
   font-size: 1.05rem;
 }
 

@@ -4,6 +4,10 @@ import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Data from './pages/Data';
+import Ambulances from './pages/Ambulances';
+import Clients from './pages/Clients';
+import Medecins from './pages/Medecins';
+import Produits from './pages/Produits';
 import './App.css';
 
 function App() {
@@ -23,6 +27,22 @@ function App() {
         <Route 
           path="/dashboard" 
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} 
+        />
+           <Route 
+          path="/ambulances" 
+          element={isAuthenticated ? <Ambulances /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/clients" 
+          element={isAuthenticated ? <Clients /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/medecins" 
+          element={isAuthenticated ? <Medecins /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/produits" 
+          element={isAuthenticated ? <Produits /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/data" 
