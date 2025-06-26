@@ -40,16 +40,6 @@ const createClient = async (req, res) => {
     const { clientFullName, email, villeId } = req.body;
     const now = new Date();
 
-    // Vérifier si l'email existe déjà
-    const [existingClient] = await db.query(
-      'SELECT id FROM Clients WHERE email = ? AND destroyTime IS NULL',
-      [email]
-    );
-
-    if (existingClient.length > 0) {
-      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
-    }
-
     const [result] = await db.query(
       'INSERT INTO Clients (clientFullName, email, villeId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?)',
       [clientFullName, email, villeId, now, now]
@@ -74,15 +64,6 @@ const updateClient = async (req, res) => {
     const { clientFullName, email, villeId } = req.body;
     const now = new Date();
 
-    // Vérifier si l'email existe déjà pour un autre client
-    const [existingClient] = await db.query(
-      'SELECT id FROM Clients WHERE email = ? AND id != ? AND destroyTime IS NULL',
-      [email, req.params.id]
-    );
-
-    if (existingClient.length > 0) {
-      return res.status(400).json({ message: 'Cet email est déjà utilisé' });
-    }
 
     const [result] = await db.query(
       'UPDATE Clients SET clientFullName = ?, email = ?, villeId = ?, updatedAt = ? WHERE id = ? AND destroyTime IS NULL',

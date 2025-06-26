@@ -1,6 +1,16 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+const https = require('https');
+const fs = require('fs');
+
+
+// Configuration HTTPS
+const httpsOptions = {
+ //cert: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/fullchain.pem'),
+ //key: fs.readFileSync('/etc/letsencrypt/live/kpi.omnidoc.ma/privkey.pem')
+};
+
 
 // Import des routes
 const ambulanceRoutes = require('./routes/ambulanceRoutes');
@@ -58,7 +68,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Une erreur est survenue sur le serveur' });
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4301;
+
+const HTTPS_PORT = process.env.HTTPS_PORT || 4300;
+
+// Créer le serveur HTTPS
+https.createServer(httpsOptions, app).listen(HTTPS_PORT, () => {
+  console.log(`Serveur HTTPS démarré sur le port ${HTTPS_PORT}`);
+});
+
+// Garder le serveur HTTP pour la redirection si nécessaire
+
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Serveur HTTP démarré sur le port ${PORT}`);
 }); 
