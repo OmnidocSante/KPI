@@ -91,7 +91,7 @@ const deleteClient = async (req, res) => {
   try {
     const now = new Date();
     const [result] = await db.query(
-      'UPDATE Clients SET destroyTime = ? WHERE id = ? AND destroyTime IS NULL',
+      'delete Clients  WHERE id = ? ',
       [now, req.params.id]
     );
 
