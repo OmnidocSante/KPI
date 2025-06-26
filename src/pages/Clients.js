@@ -11,10 +11,10 @@ const Notification = ({ message, type, onClose }) => {
   }, [message, onClose]);
   if (!message) return null;
   return (
-    <div style={{ position: 'fixed', top: 20, right: 20, minWidth: 320, background: type === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '1rem 1.5rem', borderRadius: 8, zIndex: 1000, boxShadow: '0 2px 8px rgba(0,0,0,0.13)' }}>
-      {message}
-      <button onClick={onClose} style={{ marginLeft: 16, background: 'none', border: 'none', color: 'white', fontWeight: 'bold', fontSize: 18, cursor: 'pointer' }}>×</button>
-    </div>
+    <div style={{ position: 'fixed', top: 20, right: 20, minWidth: 320, background: type === 'success' ? '#4caf50' : '#f44336', color: 'white', padding: '1rem 1.5rem', borderRadius: 8, zIndex: 1000, boxShadow: '0 2px 8px rgba(0,0,0,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+    <span>{message}</span>
+    <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', fontWeight: 'bold', fontSize: 18, cursor: 'pointer', marginLeft: 16, lineHeight: 1 }}>×</button>
+  </div>
   );
 };
 
@@ -258,7 +258,7 @@ const Clients = () => {
               </div>
               <div className="form-group" style={{ marginTop: 16 }}>
                 <label>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               <div className="form-group" style={{ marginTop: 16 }}>
                 <label>Ville</label>
