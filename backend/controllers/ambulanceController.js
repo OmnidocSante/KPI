@@ -26,11 +26,11 @@ const getAmbulanceById = async (req, res) => {
 // Créer une nouvelle ambulance
 const createAmbulance = async (req, res) => {
   try {
-    const { numberPlate } = req.body;
+    const { numberPlate,type } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      'INSERT INTO Aumbulances (numberPlate, createdAt, updatedAt) VALUES (?, ?, ?)',
-      [numberPlate, now, now]
+      'INSERT INTO Aumbulances (numberPlate, createdAt, updatedAt,type) VALUES (?, ?, ?,?)',
+      [numberPlate, now, now,type]
     );
     res.status(201).json({ 
       id: result.insertId, 
@@ -46,11 +46,11 @@ const createAmbulance = async (req, res) => {
 // Mettre à jour une ambulance
 const updateAmbulance = async (req, res) => {
   try {
-    const { numberPlate } = req.body;
+    const { numberPlate,type } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      'UPDATE Aumbulances SET numberPlate = ?, updatedAt = ? WHERE id = ? AND destroyTime IS NULL',
-      [numberPlate, now, req.params.id]
+      'UPDATE Aumbulances SET numberPlate = ?, updatedAt = ?,type = ? WHERE id = ? AND destroyTime IS NULL',
+      [numberPlate, now, type, req.params.id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Ambulance non trouvée' });
@@ -58,6 +58,7 @@ const updateAmbulance = async (req, res) => {
     res.json({ 
       id: req.params.id, 
       numberPlate, 
+      type,
       updatedAt: now 
     });
   } catch (error) {
