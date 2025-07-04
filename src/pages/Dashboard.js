@@ -613,9 +613,9 @@ const Dashboard = () => {
     // Business Unit
     if (filterBU && String(item.businessUnitId) !== String(filterBU)) return false;
     // Date Début
-    if (filterDateStart && item.dateCreation && item.dateCreation < filterDateStart) return false;
+    if (filterDateStart && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) < new Date(filterDateStart).setHours(0,0,0,0)) return false;
     // Date Fin
-    if (filterDateEnd && item.dateCreation && item.dateCreation > filterDateEnd) return false;
+    if (filterDateEnd && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) > new Date(filterDateEnd).setHours(0,0,0,0)) return false;
     return true;
   });
 
