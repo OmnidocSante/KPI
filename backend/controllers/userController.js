@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // Configuration JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'votre_secret_jwt';
+const JWT_SECRET ='votre_secret_jwt';
 
 // Récupérer tous les utilisateurs
 const getAllUsers = async (req, res) => {
