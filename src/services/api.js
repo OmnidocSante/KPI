@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:4301'
+const API_URL = 'https://kpi.omnidoc.ma/api'
 
 // Configuration d'axios
 const api = axios.create({
