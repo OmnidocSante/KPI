@@ -13,4 +13,7 @@ router.post('/', ambulanceController.createAmbulance);
 router.put('/:id', ambulanceController.updateAmbulance);
 router.delete('/:id', ambulanceController.deleteAmbulance);
 
+// Route pour récupérer les images des ambulances
+router.get('/:id/image/:imageIndex', ambulanceController.getAmbulanceImage);
+
 module.exports = router; 

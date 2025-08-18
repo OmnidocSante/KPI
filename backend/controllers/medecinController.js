@@ -26,16 +26,20 @@ const getMedecinById = async (req, res) => {
 // Créer un nouveau médecin
 const createMedecin = async (req, res) => {
   try {
-    const { name, specialty } = req.body;
+    const { name, specialty, phone, contact, ville, email } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      'INSERT INTO Medciens (name, specialty, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-      [name, specialty, now, now]
+      'INSERT INTO Medciens (name, specialty, phone, contact, ville, email, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, specialty, phone, contact, ville, email, now, now]
     );
     res.status(201).json({
       id: result.insertId,
       name,
       specialty,
+      phone,
+      contact,
+      ville,
+      email,
       createdAt: now,
       updatedAt: now
     });
@@ -47,11 +51,11 @@ const createMedecin = async (req, res) => {
 // Mettre à jour un médecin
 const updateMedecin = async (req, res) => {
   try {
-    const { name, specialty } = req.body;
+    const { name, specialty, phone, contact, ville, email } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      'UPDATE Medciens SET name = ?, specialty = ?, updatedAt = ? WHERE id = ? AND destroyTime IS NULL',
-      [name, specialty, now, req.params.id]
+      'UPDATE Medciens SET name = ?, specialty = ?, phone = ?, contact = ?, ville = ?, email = ?, updatedAt = ? WHERE id = ? AND destroyTime IS NULL',
+      [name, specialty, phone, contact, ville, email, now, req.params.id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Médecin non trouvé' });
@@ -60,6 +64,10 @@ const updateMedecin = async (req, res) => {
       id: req.params.id,
       name,
       specialty,
+      phone,
+      contact,
+      ville,
+      email,
       updatedAt: now
     });
   } catch (error) {
