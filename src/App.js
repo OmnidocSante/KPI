@@ -8,6 +8,7 @@ import Ambulances from './pages/Ambulances';
 import Clients from './pages/Clients';
 import Medecins from './pages/Medecins';
 import Produits from './pages/Produits';
+import Infirmiers from './pages/Infirmiers';
 import './App.css';
 
 function App() {
@@ -39,6 +40,10 @@ function App() {
         <Route 
           path="/medecins" 
           element={isAuthenticated ? <Medecins /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/infirmiers" 
+          element={isAuthenticated ? <Infirmiers /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/produits" 

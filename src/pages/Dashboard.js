@@ -176,9 +176,8 @@ const EditForm = React.memo(({
         <h3 style={{color:'#1976d2', fontWeight:'bold', fontSize:'1.5rem', marginBottom:'1.5rem'}}>
           Modifier l'enregistrement
         </h3>
-        <form onSubmit={onSubmit} className="data-form" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.5rem'}}>
-          {/* Colonne 1 */}
-          <div>
+        <form onSubmit={onSubmit} className="data-form" style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'1.5rem'}}>
+          {/* Ligne 1 */}
             <div className="form-group">
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="business">🏢</span> Business Unit Type</label>
               <select name="businessUnitType" value={editFormData.businessUnitType} onChange={onEditChange} required style={{borderColor: formErrors.businessUnitType ? '#d32f2f' : undefined}}>
@@ -223,6 +222,8 @@ const EditForm = React.memo(({
                 {villes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
             </div>
+
+          {/* Ligne 2 */}
             <div className="form-group">
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> État de Paiement</label>
               <select name="etatPaiement" value={editFormData.etatPaiement} onChange={onEditChange}>
@@ -251,9 +252,6 @@ const EditForm = React.memo(({
                 placeholder="0.00 ou 0,00"
               />
             </div>
-          </div>
-          {/* Colonne 2 */}
-          <div>
             <div className="form-group">
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="client">👤</span> Client</label>
               <select name="client" value={isB2C(editFormData.businessUnitType, businessUnits) ? '' : editFormData.client} onChange={onEditChange} disabled={isB2C(editFormData.businessUnitType, businessUnits)}>
@@ -265,6 +263,8 @@ const EditForm = React.memo(({
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="id">🆔</span> Nom - Prénom</label>
               <input type="text" name="nomPrenom" value={editFormData.nomPrenom} onChange={onEditChange} placeholder="Votre nom et prénom ici" />
             </div>
+
+          {/* Ligne 3 */}
             <div className="form-group">
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="ambulance">🚑</span> Ambulance</label>
               <select name="ambulance" value={isAmbulanceRequired(editFormData.produit, produits) ? editFormData.ambulance : ''} onChange={onEditChange} disabled={!isAmbulanceRequired(editFormData.produit, produits)}>
@@ -284,7 +284,8 @@ const EditForm = React.memo(({
               <label style={{fontWeight:'bold'}}><span role="img" aria-label="phone">📞</span> Numéro</label>
               <input type="text" name="numero" value={editFormData.numero} onChange={onEditChange} placeholder="Numéro" />
             </div>
-          </div>
+
+          {/* Ligne 4 */}
           <div className="form-group">
             <label style={{fontWeight:'bold'}}><span role="img" aria-label="note">📝</span> Note</label>
             <input 
@@ -312,6 +313,8 @@ const EditForm = React.memo(({
               <option value="cheque">Chèque</option>
             </select>
           </div>
+          <div></div>
+          <div></div>
           <div className="edit-modal-buttons" style={{display: 'flex', flexDirection: 'row', gap: '1rem'}}>
             <button type="button" onClick={onCancel}>Annuler</button>
             <button type="submit" className="save-btn">Enregistrer</button>
@@ -431,18 +434,39 @@ const Dashboard = () => {
   const modalRef = useRef(null);
   const [scrollPosition, setScrollPosition] = useState(0);
 
-  const [filterClient, setFilterClient] = useState('');
-  const [filterAmbulance, setFilterAmbulance] = useState('');
-  const [filterRef, setFilterRef] = useState('');
-  const [filterBU, setFilterBU] = useState('');
+  const [filterClient, setFilterClient] = useState([]);
+  const [filterAmbulance, setFilterAmbulance] = useState([]);
+  const [filterRef, setFilterRef] = useState([]);
+  const [filterBU, setFilterBU] = useState([]);
+  const [newRefInput, setNewRefInput] = useState('');
   const [filterDateStart, setFilterDateStart] = useState('');
   const [filterDateEnd, setFilterDateEnd] = useState('');
+  
+  // Nouveaux filtres avec multi-sélection
+  const [filterVille, setFilterVille] = useState([]);
+  const [filterProduit, setFilterProduit] = useState([]);
+  const [filterMedecin, setFilterMedecin] = useState([]);
+  const [filterEtatPaiement, setFilterEtatPaiement] = useState([]);
+    const [filterCaTTC, setFilterCaTTC] = useState({ min: '', max: '' });
+  const [dropdownOpen, setDropdownOpen] = useState({
+    ville: false,
+    produit: false,
+    medecin: false,
+    etatPaiement: false,
+    client: false,
+    ambulance: false,
+    ref: false,
+    bu: false
+  });
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  
+  // Référence pour détecter les clics en dehors des dropdowns
+  const dropdownRefs = useRef({});
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 100;
 
   const [notification, setNotification] = useState({ message: '', type: '' });
 
@@ -485,6 +509,33 @@ const Dashboard = () => {
       } catch (err) {}
     };
     fetchGlobales();
+  }, []);
+
+  // Gérer les clics en dehors des dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const isOutside = Object.values(dropdownRefs.current).every(ref => 
+        ref && !ref.contains(event.target)
+      );
+      
+      if (isOutside) {
+        setDropdownOpen({
+          ville: false,
+          produit: false,
+          medecin: false,
+          etatPaiement: false,
+          client: false,
+          ambulance: false,
+          ref: false,
+          bu: false
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleChange = (e) => {
@@ -596,6 +647,95 @@ const Dashboard = () => {
     }
   };
 
+  // Fonctions pour gérer la multi-sélection des filtres
+  const handleFilterVilleChange = (villeId) => {
+    const villeIdStr = String(villeId);
+    setFilterVille(prev => 
+      prev.includes(villeIdStr) 
+        ? prev.filter(id => id !== villeIdStr)
+        : [...prev, villeIdStr]
+    );
+  };
+
+  const handleFilterProduitChange = (produitId) => {
+    const produitIdStr = String(produitId);
+    setFilterProduit(prev => 
+      prev.includes(produitIdStr) 
+        ? prev.filter(id => id !== produitIdStr)
+        : [...prev, produitIdStr]
+    );
+  };
+
+  const handleFilterMedecinChange = (medecinId) => {
+    const medecinIdStr = String(medecinId);
+    setFilterMedecin(prev => 
+      prev.includes(medecinIdStr) 
+        ? prev.filter(id => id !== medecinIdStr)
+        : [...prev, medecinIdStr]
+    );
+  };
+
+  const handleFilterEtatPaiementChange = (etat) => {
+    setFilterEtatPaiement(prev => 
+      prev.includes(etat) 
+        ? prev.filter(e => e !== etat)
+        : [...prev, etat]
+    );
+  };
+
+  const handleFilterClientChange = (clientId) => {
+    const clientIdStr = String(clientId);
+    setFilterClient(prev => 
+      prev.includes(clientIdStr) 
+        ? prev.filter(id => id !== clientIdStr)
+        : [...prev, clientIdStr]
+    );
+  };
+
+  const handleFilterAmbulanceChange = (ambulanceId) => {
+    const ambulanceIdStr = String(ambulanceId);
+    setFilterAmbulance(prev => 
+      prev.includes(ambulanceIdStr) 
+        ? prev.filter(id => id !== ambulanceIdStr)
+        : [...prev, ambulanceIdStr]
+    );
+  };
+
+  const handleFilterRefChange = (ref) => {
+    setFilterRef(prev => 
+      prev.includes(ref) 
+        ? prev.filter(r => r !== ref)
+        : [...prev, ref]
+    );
+  };
+
+  const handleAddRef = (ref) => {
+    if (ref.trim() && !filterRef.includes(ref.trim())) {
+      setFilterRef(prev => [...prev, ref.trim()]);
+      setNewRefInput('');
+    }
+  };
+
+  const handleRemoveRef = (index) => {
+    setFilterRef(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFilterBUChange = (buId) => {
+    const buIdStr = String(buId);
+    setFilterBU(prev => 
+      prev.includes(buIdStr) 
+        ? prev.filter(id => id !== buIdStr)
+        : [...prev, buIdStr]
+    );
+  };
+
+  const handleFilterCaTTCChange = (type, value) => {
+    setFilterCaTTC(prev => ({
+      ...prev,
+      [type]: value
+    }));
+  };
+
   const handleFiltreChange = (e) => {
     setFiltres({
       ...filtres,
@@ -604,18 +744,39 @@ const Dashboard = () => {
   };
 
   const globalesFiltered = globales.filter(item => {
-    // Client
-    if (filterClient && String(item.clientId) !== String(filterClient)) return false;
-    // Ambulance
-    if (filterAmbulance && String(item.aumbulanceId) !== String(filterAmbulance)) return false;
-    // Référence
-    if (filterRef && !item.Ref?.toLowerCase().includes(filterRef.toLowerCase())) return false;
-    // Business Unit
-    if (filterBU && String(item.businessUnitId) !== String(filterBU)) return false;
+    // Client (multi-sélection)
+    if (filterClient.length > 0 && !filterClient.includes(String(item.clientId))) return false;
+    // Ambulance (multi-sélection)
+    if (filterAmbulance.length > 0 && !filterAmbulance.includes(String(item.aumbulanceId))) return false;
+    // Référence (multi-sélection)
+    if (filterRef.length > 0 && !filterRef.includes(item.Ref)) return false;
+    // Business Unit (multi-sélection)
+    if (filterBU.length > 0 && !filterBU.includes(String(item.businessUnitId))) return false;
     // Date Début
     if (filterDateStart && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) < new Date(filterDateStart).setHours(0,0,0,0)) return false;
     // Date Fin
     if (filterDateEnd && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) > new Date(filterDateEnd).setHours(0,0,0,0)) return false;
+    
+    // Nouveaux filtres
+    // Ville (multi-sélection)
+    if (filterVille.length > 0 && !filterVille.includes(String(item.villeId))) return false;
+    
+    // Produit (multi-sélection)
+    if (filterProduit.length > 0 && !filterProduit.includes(String(item.produitId))) return false;
+    
+    // Médecin/Infirmier (multi-sélection)
+    if (filterMedecin.length > 0) {
+      const medecinId = isInfirmierAct(item.produitId, produits) ? item.infermierId : item.medcienId;
+      if (!filterMedecin.includes(String(medecinId))) return false;
+    }
+    
+    // État de paiement (multi-sélection)
+    if (filterEtatPaiement.length > 0 && !filterEtatPaiement.includes(item.etatdePaiment)) return false;
+    
+    // CA TTC (plage min-max)
+    if (filterCaTTC.min && parseFloat(item.caTTC) < parseFloat(filterCaTTC.min)) return false;
+    if (filterCaTTC.max && parseFloat(item.caTTC) > parseFloat(filterCaTTC.max)) return false;
+    
     return true;
   });
 
@@ -765,7 +926,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd]);
+  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement, filterCaTTC]);
 
   const handleDownloadExcel = () => {
     // Préparer les données pour l'export
@@ -836,9 +997,8 @@ const Dashboard = () => {
             <h3 style={{color:'#1976d2', fontWeight:'bold', fontSize:'1.5rem', display:'flex', alignItems:'center', gap:'0.5rem'}}>
               <span role="img" aria-label="form">📄</span> Formulaire de Sélection
             </h3>
-            <form onSubmit={handleSubmit} className="data-form" style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.5rem'}}>
-              {/* Colonne 1 */}
-              <div>
+            <form onSubmit={handleSubmit} className="data-form" style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'1.5rem'}}>
+              {/* Ligne 1 */}
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="business">🏢</span> Business Unit Type</label>
                   <select name="businessUnitType" value={formData.businessUnitType} onChange={handleChange} required style={{borderColor: formErrors.businessUnitType ? '#d32f2f' : undefined}}>
@@ -891,6 +1051,8 @@ const Dashboard = () => {
                     {villes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>
                 </div>
+
+              {/* Ligne 2 */}
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> État de Paiement</label>
                   <select name="etatPaiement" value={formData.etatPaiement} onChange={handleChange}>
@@ -917,9 +1079,6 @@ const Dashboard = () => {
                     placeholder="0.00 ou 0,00"
                   />
                 </div>
-              </div>
-              {/* Colonne 2 */}
-              <div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="client">👤</span> Client</label>
                   <select name="client" value={isB2C(formData.businessUnitType, businessUnits) ? '' : formData.client} onChange={handleChange} disabled={isB2C(formData.businessUnitType, businessUnits)}>
@@ -931,6 +1090,8 @@ const Dashboard = () => {
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="id">🆔</span> Nom - Prénom</label>
                   <input type="text" name="nomPrenom" value={formData.nomPrenom} onChange={handleChange} placeholder="Votre nom et prénom ici" />
                 </div>
+
+              {/* Ligne 3 */}
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="ambulance">🚑</span> Ambulance</label>
                   <select name="ambulance" value={isAmbulanceRequired(formData.produit, produits) ? formData.ambulance : ''} onChange={handleChange} disabled={!isAmbulanceRequired(formData.produit, produits)}>
@@ -950,7 +1111,8 @@ const Dashboard = () => {
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="phone">📞</span> Numéro</label>
                   <input type="text" name="numero" value={formData.numero} onChange={handleChange} placeholder="Numéro" />
                 </div>
-              </div>
+
+              {/* Ligne 4 */}
               <div className="form-group">
                 <label style={{fontWeight:'bold'}}><span role="img" aria-label="note">📝</span> Note</label>
                 <input 
@@ -977,7 +1139,9 @@ const Dashboard = () => {
                   <option value="cheque">Chèque</option>
                 </select>
               </div>
-              <button type="submit" className="submit-btn" style={{gridColumn:'1/3', marginTop:'1rem'}}>Ajouter</button>
+              <div></div>
+              <div></div>
+              <button type="submit" className="submit-btn" style={{gridColumn:'1/5', marginTop:'1rem'}}>Ajouter</button>
             </form>
           </div>
 
@@ -1008,70 +1172,304 @@ const Dashboard = () => {
                   <span role="img" aria-label="download">📥</span>
                   Télécharger Excel
                 </button>
-                <button
-                  className="reset-filters-btn"
-                  onClick={() => {
-                    setFilterClient('');
-                    setFilterAmbulance('');
-                    setFilterRef('');
-                    setFilterBU('');
-                    setFilterDateStart('');
-                    setFilterDateEnd('');
-                  }}
-                >
-                  <span role="img" aria-label="reset" style={{marginRight: 6}}>🔄</span>
-                  Reset Filters
-                </button>
+
               </div>
             </div>
-            <div className="filters-row">
-              <div className="filter-group">
-                <label>Client</label>
-                <select value={filterClient} onChange={e => setFilterClient(e.target.value)}>
-                  <option value="">All Clients</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.clientFullName}</option>)}
-                </select>
+            <div className="filters-section">
+              
+              
+              {/* Première ligne - Filtres principaux */}
+              <div className="filters-grid">
+                <div className="filter-group">
+                  <label>🏙️ Ville</label>
+                  <div className={`dropdown-container ${dropdownOpen.ville ? 'open' : ''}`} ref={el => dropdownRefs.current.ville = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, ville: !prev.ville}))}>
+                      <span>{filterVille.length > 0 ? `${filterVille.length} ville(s)` : 'Toutes les villes'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.ville && (
+                      <div className="dropdown-content">
+                        {villes.map(ville => (
+                          <label key={ville.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterVille.includes(String(ville.id))}
+                              onChange={() => handleFilterVilleChange(ville.id)}
+                            />
+                            <span>{ville.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>💊 Produit</label>
+                  <div className={`dropdown-container ${dropdownOpen.produit ? 'open' : ''}`} ref={el => dropdownRefs.current.produit = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, produit: !prev.produit}))}>
+                      <span>{filterProduit.length > 0 ? `${filterProduit.length} produit(s)` : 'Tous les produits'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.produit && (
+                      <div className="dropdown-content">
+                        {produits.map(produit => (
+                          <label key={produit.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterProduit.includes(String(produit.id))}
+                              onChange={() => handleFilterProduitChange(produit.id)}
+                            />
+                            <span>{produit.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>👨‍⚕️ Médecin/Infirmier</label>
+                  <div className={`dropdown-container ${dropdownOpen.medecin ? 'open' : ''}`} ref={el => dropdownRefs.current.medecin = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, medecin: !prev.medecin}))}>
+                      <span>{filterMedecin.length > 0 ? `${filterMedecin.length} sélectionné(s)` : 'Tous les professionnels'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.medecin && (
+                      <div className="dropdown-content">
+                        <div className="filter-section-title">Médecins</div>
+                        {medciens.map(medecin => (
+                          <label key={medecin.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterMedecin.includes(String(medecin.id))}
+                              onChange={() => handleFilterMedecinChange(medecin.id)}
+                            />
+                            <span>{medecin.name}</span>
+                          </label>
+                        ))}
+                        <div className="filter-section-title">Infirmiers</div>
+                        {infirmiers.map(infirmier => (
+                          <label key={`inf_${infirmier.id}`} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterMedecin.includes(String(infirmier.id))}
+                              onChange={() => handleFilterMedecinChange(infirmier.id)}
+                            />
+                            <span>{infirmier.nom}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>💳 État de Paiement</label>
+                  <div className={`dropdown-container ${dropdownOpen.etatPaiement ? 'open' : ''}`} ref={el => dropdownRefs.current.etatPaiement = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, etatPaiement: !prev.etatPaiement}))}>
+                      <span>{filterEtatPaiement.length > 0 ? `${filterEtatPaiement.length} état(s)` : 'Tous les états'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.etatPaiement && (
+                      <div className="dropdown-content">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterEtatPaiement.includes('Oui')}
+                            onChange={() => handleFilterEtatPaiementChange('Oui')}
+                          />
+                          <span>✅ Payé</span>
+                        </label>
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterEtatPaiement.includes('Non')}
+                            onChange={() => handleFilterEtatPaiementChange('Non')}
+                          />
+                          <span>❌ Non payé</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="filter-group">
-                <label>Ambulance</label>
-                <select value={filterAmbulance} onChange={e => setFilterAmbulance(e.target.value)}>
-                  <option value="">All Ambulances</option>
-                  {ambulances.map(a => <option key={a.id} value={a.id}>{a.numberPlate}</option>)}
-                </select>
+
+              {/* Deuxième ligne - Filtres secondaires */}
+              <div className="filters-grid">
+                <div className="filter-group">
+                  <label>👤 Client</label>
+                  <div className={`dropdown-container ${dropdownOpen.client ? 'open' : ''}`} ref={el => dropdownRefs.current.client = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, client: !prev.client}))}>
+                      <span>{filterClient.length > 0 ? `${filterClient.length} client(s)` : 'Tous les clients'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.client && (
+                      <div className="dropdown-content">
+                        {clients.map(client => (
+                          <label key={client.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterClient.includes(String(client.id))}
+                              onChange={() => handleFilterClientChange(client.id)}
+                            />
+                            <span>{client.clientFullName}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>🚑 Ambulance</label>
+                  <div className={`dropdown-container ${dropdownOpen.ambulance ? 'open' : ''}`} ref={el => dropdownRefs.current.ambulance = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, ambulance: !prev.ambulance}))}>
+                      <span>{filterAmbulance.length > 0 ? `${filterAmbulance.length} ambulance(s)` : 'Toutes les ambulances'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.ambulance && (
+                      <div className="dropdown-content">
+                        {ambulances.map(ambulance => (
+                          <label key={ambulance.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterAmbulance.includes(String(ambulance.id))}
+                              onChange={() => handleFilterAmbulanceChange(ambulance.id)}
+                            />
+                            <span>{ambulance.numberPlate}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>🏢 Business Unit</label>
+                  <div className={`dropdown-container ${dropdownOpen.bu ? 'open' : ''}`} ref={el => dropdownRefs.current.bu = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, bu: !prev.bu}))}>
+                      <span>{filterBU.length > 0 ? `${filterBU.length} BU(s)` : 'Toutes les BU'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.bu && (
+                      <div className="dropdown-content">
+                        {businessUnits.map(bu => (
+                          <label key={bu.id} className="checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={filterBU.includes(String(bu.id))}
+                              onChange={() => handleFilterBUChange(bu.id)}
+                            />
+                            <span>{bu.businessUnitType}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-group">
+                  <label>🔢 Référence</label>
+                  <div className={`dropdown-container ${dropdownOpen.ref ? 'open' : ''}`} ref={el => dropdownRefs.current.ref = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, ref: !prev.ref}))}>
+                      <span>{filterRef.length > 0 ? `${filterRef.length} référence(s)` : 'Ajouter des références'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.ref && (
+                      <div className="dropdown-content">
+                        <div className="ref-input-section">
+                          <input
+                            type="text"
+                            placeholder="Tapez une référence..."
+                            value={newRefInput}
+                            onChange={(e) => setNewRefInput(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleAddRef(newRefInput);
+                              }
+                            }}
+                            className="ref-input"
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => handleAddRef(newRefInput)}
+                            className="add-ref-btn"
+                            disabled={!newRefInput.trim()}
+                          >
+                            ➕ Ajouter
+                          </button>
+                        </div>
+                        {filterRef.length > 0 && (
+                          <div className="ref-list">
+                            <div className="ref-list-title">Références sélectionnées :</div>
+                            {filterRef.map((ref, index) => (
+                              <div key={index} className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={filterRef.includes(ref)}
+                                  onChange={() => handleRemoveRef(index)}
+                                />
+                                <span>{ref}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="filter-group">
-                <label>Référence</label>
-                <input
-                  type="text"
-                  placeholder="All Refs"
-                  value={filterRef}
-                  onChange={e => setFilterRef(e.target.value)}
-                />
-              </div>
-              <div className="filter-group">
-                <label>Business Unit</label>
-                <select value={filterBU} onChange={e => setFilterBU(e.target.value)}>
-                  <option value="">All Types</option>
-                  {businessUnits.map(bu => <option key={bu.id} value={bu.id}>{bu.businessUnitType}</option>)}
-                </select>
-              </div>
-              <div className="filter-group">
-                <label>Date Début</label>
-                <input
-                  type="date"
-                  placeholder="jj/mm/aaaa"
-                  value={filterDateStart}
-                  onChange={e => setFilterDateStart(e.target.value)}
-                />
-              </div>
-              <div className="filter-group">
-                <label>Date Fin</label>
-                <input
-                  type="date"
-                  placeholder="jj/mm/aaaa"
-                  value={filterDateEnd}
-                  onChange={e => setFilterDateEnd(e.target.value)}
-                />
+
+              {/* Troisième ligne - Filtres de date et CA */}
+              <div className="filters-grid">
+                <div className="filter-group">
+                  <label>📅 Date de début</label>
+                  <input
+                    type="date"
+                    value={filterDateStart}
+                    onChange={e => setFilterDateStart(e.target.value)}
+                    className="date-input"
+                  />
+                </div>
+
+                <div className="filter-group">
+                  <label>📅 Date de fin</label>
+                  <input
+                    type="date"
+                    value={filterDateEnd}
+                    onChange={e => setFilterDateEnd(e.target.value)}
+                    className="date-input"
+                  />
+                </div>
+
+                <div className="filter-group">
+                 
+                </div>
+
+                <div className="filter-group filter-actions">
+                  <label>&nbsp;</label>
+                  <button
+                    className="reset-filters-btn"
+                    onClick={() => {
+                      setFilterClient([]);
+                      setFilterAmbulance([]);
+                      setFilterRef([]);
+                      setFilterBU([]);
+                      setNewRefInput('');
+                      setFilterDateStart('');
+                      setFilterDateEnd('');
+                      setFilterVille([]);
+                      setFilterProduit([]);
+                      setFilterMedecin([]);
+                      setFilterEtatPaiement([]);
+                      setFilterCaTTC({ min: '', max: '' });
+                    }}
+                  >
+                    <span role="img" aria-label="reset">🔄</span>
+                    Réinitialiser tous les filtres
+                  </button>
+                </div>
               </div>
             </div>
             <div className="table-container">

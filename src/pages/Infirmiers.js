@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
-import { fetchMedecins, createMedecin, updateMedecin, deleteMedecin } from '../services/api';
+import { fetchInfirmiers, createInfirmier, updateInfirmier, deleteInfirmier } from '../services/api';
 
 const Notification = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -18,12 +18,12 @@ const Notification = ({ message, type, onClose }) => {
   );
 };
 
-const Medecins = () => {
-  const [medecins, setMedecins] = useState([]);
+const Infirmiers = () => {
+  const [infirmiers, setInfirmiers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [editMedecin, setEditMedecin] = useState(null);
-  const [name, setName] = useState('');
+  const [editInfirmier, setEditInfirmier] = useState(null);
+  const [nom, setNom] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [phone, setPhone] = useState('');
   const [contact, setContact] = useState('');
@@ -33,24 +33,24 @@ const Medecins = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState("");
 
-  const loadMedecins = async () => {
+  const loadInfirmiers = async () => {
     setLoading(true);
     try {
-      const res = await fetchMedecins();
-      setMedecins(res.data);
+      const res = await fetchInfirmiers();
+      setInfirmiers(res.data);
     } catch (e) {
-      setNotification({ message: "Erreur lors du chargement des médecins", type: 'error' });
+      setNotification({ message: "Erreur lors du chargement des infirmiers", type: 'error' });
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    loadMedecins();
+    loadInfirmiers();
   }, []);
 
   const openAddModal = () => {
-    setEditMedecin(null);
-    setName('');
+    setEditInfirmier(null);
+    setNom('');
     setSpecialty('');
     setPhone('');
     setContact('');
@@ -59,30 +59,30 @@ const Medecins = () => {
     setShowModal(true);
   };
 
-  const openEditModal = (medecin) => {
-    setEditMedecin(medecin);
-    setName(medecin.name || '');
-    setSpecialty(medecin.specialty || '');
-    setPhone(medecin.phone || '');
-    setContact(medecin.contact || '');
-    setVille(medecin.ville || '');
-    setEmail(medecin.email || '');
+  const openEditModal = (infirmier) => {
+    setEditInfirmier(infirmier);
+    setNom(infirmier.nom || '');
+    setSpecialty(infirmier.specialty || '');
+    setPhone(infirmier.phone || '');
+    setContact(infirmier.contact || '');
+    setVille(infirmier.ville || '');
+    setEmail(infirmier.email || '');
     setShowModal(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const medecinData = { name, specialty, phone, contact, ville, email };
-      if (editMedecin) {
-        await updateMedecin(editMedecin.id, medecinData);
-        setNotification({ message: 'Médecin modifié avec succès', type: 'success' });
+      const infirmierData = { nom, specialty, phone, contact, ville, email };
+      if (editInfirmier) {
+        await updateInfirmier(editInfirmier.id, infirmierData);
+        setNotification({ message: 'Infirmier modifié avec succès', type: 'success' });
       } else {
-        await createMedecin(medecinData);
-        setNotification({ message: 'Médecin ajouté avec succès', type: 'success' });
+        await createInfirmier(infirmierData);
+        setNotification({ message: 'Infirmier ajouté avec succès', type: 'success' });
       }
       setShowModal(false);
-      loadMedecins();
+      loadInfirmiers();
     } catch (e) {
       setNotification({ message: e?.response?.data?.message || "Erreur lors de l'enregistrement", type: 'error' });
     }
@@ -90,10 +90,10 @@ const Medecins = () => {
 
   const handleDelete = async (id) => {
     try {
-      await deleteMedecin(id);
-      setNotification({ message: 'Médecin supprimé', type: 'success' });
+      await deleteInfirmier(id);
+      setNotification({ message: 'Infirmier supprimé', type: 'success' });
       setDeleteId(null);
-      loadMedecins();
+      loadInfirmiers();
     } catch (e) {
       setNotification({ message: "Erreur lors de la suppression", type: 'error' });
     }
@@ -107,13 +107,13 @@ const Medecins = () => {
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>🩺 Liste des médecins</h2>
+                <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>💉 Liste des infirmiers</h2>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
-                    placeholder="Rechercher un médecin..."
+                    placeholder="Rechercher un infirmier..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
@@ -156,7 +156,7 @@ const Medecins = () => {
                   onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
                 >
                   <span style={{ fontSize: '1.2rem' }}>+</span>
-                  Ajouter un médecin
+                  Ajouter un infirmier
                 </button>
               </div>
             </div>
@@ -178,29 +178,29 @@ const Medecins = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {medecins.filter(medecin =>
-                      (medecin.name || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.ville || '').toLowerCase().includes(search.toLowerCase())
+                    {infirmiers.filter(infirmier =>
+                      (infirmier.nom || '').toLowerCase().includes(search.toLowerCase()) ||
+                      (infirmier.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+                      (infirmier.ville || '').toLowerCase().includes(search.toLowerCase())
                     ).length === 0 ? (
-                      <tr><td colSpan="8">Aucun médecin trouvé.</td></tr>
-                    ) : medecins.filter(medecin =>
-                      (medecin.name || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.ville || '').toLowerCase().includes(search.toLowerCase())
-                    ).map(medecin => (
-                      <tr key={medecin.id}>
-                        <td>{medecin.id}</td>
-                        <td>{medecin.name || ''}</td>
-                        <td>{medecin.specialty || ''}</td>
-                        <td>{medecin.phone || '-'}</td>
-                        <td>{medecin.contact || '-'}</td>
-                        <td>{medecin.ville || '-'}</td>
-                        <td>{medecin.email || '-'}</td>
+                      <tr><td colSpan="8">Aucun infirmier trouvé.</td></tr>
+                    ) : infirmiers.filter(infirmier =>
+                      (infirmier.nom || '').toLowerCase().includes(search.toLowerCase()) ||
+                      (infirmier.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+                      (infirmier.ville || '').toLowerCase().includes(search.toLowerCase())
+                    ).map(infirmier => (
+                      <tr key={infirmier.id}>
+                        <td>{infirmier.id}</td>
+                        <td>{infirmier.nom || ''}</td>
+                        <td>{infirmier.specialty || ''}</td>
+                        <td>{infirmier.phone || '-'}</td>
+                        <td>{infirmier.contact || '-'}</td>
+                        <td>{infirmier.ville || '-'}</td>
+                        <td>{infirmier.email || '-'}</td>
                         <td>
                           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                             <button
-                              onClick={() => openEditModal(medecin)}
+                              onClick={() => openEditModal(infirmier)}
                               style={{
                                 background: '#f8fafc',
                                 color: '#1976d2',
@@ -222,7 +222,7 @@ const Medecins = () => {
                               }}
                             >Modifier</button>
                             <button
-                              onClick={() => setDeleteId(medecin.id)}
+                              onClick={() => setDeleteId(infirmier.id)}
                               style={{
                                 background: '#fff5f5',
                                 color: '#dc2626',
@@ -284,10 +284,10 @@ const Medecins = () => {
                   justifyContent: 'center',
                   gap: '0.5rem'
                 }}>
-                  {editMedecin ? '✏️ Modifier le médecin' : '➕ Ajouter un nouveau médecin'}
+                  {editInfirmier ? '✏️ Modifier l\'infirmier' : '➕ Ajouter un nouvel infirmier'}
                 </h2>
                 <p style={{ margin: '0.5rem 0 0 0', color: '#718096', fontSize: 'clamp(0.85rem, 2.5vw, 0.95rem)' }}>
-                  {editMedecin ? 'Modifiez les informations du médecin' : 'Ajoutez un nouveau médecin à la base de données'}
+                  {editInfirmier ? 'Modifiez les informations de l\'infirmier' : 'Ajoutez un nouvel infirmier à la base de données'}
                 </p>
               </div>
 
@@ -317,10 +317,10 @@ const Medecins = () => {
                       </label>
                       <input 
                         type="text" 
-                        value={name} 
-                        onChange={e => setName(e.target.value)} 
+                        value={nom} 
+                        onChange={e => setNom(e.target.value)} 
                         required
-                        placeholder="Ex: Dr. Ahmed Ben Ali"
+                        placeholder="Ex: Fatima Zahra"
                         style={{
                           width: '100%',
                           padding: '0.75rem 1rem',
@@ -350,7 +350,7 @@ const Medecins = () => {
                         value={specialty} 
                         onChange={e => setSpecialty(e.target.value)} 
                         required
-                        placeholder="Ex: Cardiologie, Dermatologie..."
+                        placeholder="Ex: Soins intensifs, Pédiatrie..."
                         style={{
                           width: '100%',
                           padding: '0.75rem 1rem',
@@ -411,7 +411,7 @@ const Medecins = () => {
                         type="text" 
                         value={contact} 
                         onChange={e => setContact(e.target.value)} 
-                        placeholder="Ex: Secrétariat, Assistant..."
+                        placeholder="Ex: Chef de service, Responsable..."
                         style={{
                           width: '100%',
                           padding: '0.75rem 1rem',
@@ -469,7 +469,7 @@ const Medecins = () => {
                         type="email" 
                         value={email} 
                         onChange={e => setEmail(e.target.value)} 
-                        placeholder="Ex: medecin@hopital.com"
+                        placeholder="Ex: infirmier@hopital.com"
                         style={{
                           width: '100%',
                           padding: '0.75rem 1rem',
@@ -538,7 +538,7 @@ const Medecins = () => {
                     onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                     onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
                   >
-                    {editMedecin ? '💾 Enregistrer' : '➕ Ajouter'}
+                    {editInfirmier ? '💾 Enregistrer' : '➕ Ajouter'}
                   </button>
                 </div>
               </form>
@@ -551,7 +551,7 @@ const Medecins = () => {
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
             <div style={{ background: 'white', padding: 32, borderRadius: 12, minWidth: 320, maxWidth: 400 }}>
               <h3>Confirmer la suppression</h3>
-              <p>Voulez-vous vraiment supprimer ce médecin ?</p>
+              <p>Voulez-vous vraiment supprimer cet infirmier ?</p>
               <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                 <button className="submit-btn" style={{ background: '#1976d2', color: 'white'}} onClick={() => setDeleteId(null)}>Annuler</button>
                 <button onClick={() => handleDelete(deleteId)} style={{ background: '#dc2626', color: 'white', border: 'none', borderRadius: 8, padding: '0.7rem 1.2rem', fontWeight: 'bold', cursor: 'pointer' }}>Supprimer</button>
@@ -567,4 +567,4 @@ const Medecins = () => {
   );
 };
 
-export default Medecins;
+export default Infirmiers;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://kpi.omnidoc.ma/api'
+const API_URL = 'http://localhost:4301'
 
 // Configuration d'axios
 const api = axios.create({
@@ -64,6 +64,12 @@ export const updateClient = (id, data) => api.put(`/clients/${id}`, data);
 export const deleteClient = (id) => api.delete(`/clients/${id}`);
 export const searchClients = (query) => api.get(`/clients/search?query=${encodeURIComponent(query)}`);
 
+// Fonctions pour l'API Contacts des clients
+export const fetchClientContacts = (clientId) => api.get(`/clients/${clientId}/contacts`);
+export const addClientContact = (clientId, data) => api.post(`/clients/${clientId}/contacts`, data);
+export const updateClientContact = (contactId, data) => api.put(`/clients/contacts/${contactId}`, data);
+export const deleteClientContact = (contactId) => api.delete(`/clients/contacts/${contactId}`);
+
 // Fonctions pour l'API Villes
 export const fetchVilles = () => api.get('/villes');
 
@@ -73,6 +79,13 @@ export const fetchMedecinById = (id) => api.get(`/medecins/${id}`);
 export const createMedecin = (data) => api.post('/medecins', data);
 export const updateMedecin = (id, data) => api.put(`/medecins/${id}`, data);
 export const deleteMedecin = (id) => api.delete(`/medecins/${id}`);
+
+// Fonctions pour l'API Infirmiers
+export const fetchInfirmiers = () => api.get('/infirmiers');
+export const fetchInfirmierById = (id) => api.get(`/infirmiers/${id}`);
+export const createInfirmier = (data) => api.post('/infirmiers', data);
+export const updateInfirmier = (id, data) => api.put(`/infirmiers/${id}`, data);
+export const deleteInfirmier = (id) => api.delete(`/infirmiers/${id}`);
 
 // Fonctions pour l'API Produits
 export const fetchProduits = () => api.get('/produits');
