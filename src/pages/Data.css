@@ -31,45 +31,120 @@
 }
 
 .data-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.2rem;
-  justify-content: center;
-  align-items: flex-end;
-  margin-bottom: 2.2rem;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1rem;
+  align-items: start;
+  justify-content: start;
+  margin-bottom: 1rem;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px #0001;
-  padding: 1.2rem 1vw;
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
+  position: relative;
 }
+
+.data-filters > div {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  width: 100%;
+  white-space: nowrap;
+  position: relative;
+}
+
 .data-filters label {
   font-weight: 600;
   color: #1976d2;
-  margin-right: 0.3em;
-  font-size: 1.01em;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: left;
+  min-width: fit-content;
 }
+
 .data-filters input,
 .data-filters select {
-  padding: 0.5em 0.7em;
+  padding: 0.5rem 0.6rem;
   border-radius: 7px;
   border: 1.2px solid #e3e6f0;
-  font-size: 1em;
+  font-size: 0.85rem;
   background: #f8fafc;
-  margin-left: 0.2em;
-  min-width: 8px;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-shrink: 1;
 }
-@media (max-width: 700px) {
+
+.data-filters button {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  flex-shrink: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+}
+
+/* Style pour les dropdowns */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-container > div[style*="position: absolute"] {
+  z-index: 9999 !important;
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  background: #fff !important;
+  border: 1px solid #ddd !important;
+  border-radius: 4px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  min-width: 200px !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+@media (max-width: 1400px) {
   .data-filters {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.7rem;
-    padding: 0.7rem 0.5vw;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.8rem;
   }
-  .data-filters > div {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.5em;
+}
+
+@media (max-width: 1200px) {
+  .data-filters {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .data-filters {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+    padding: 0.8rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .data-filters {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .data-filters {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }
 
@@ -134,6 +209,37 @@
   font-size: 1.13em;
   font-weight: 700;
   text-align: left;
+}
+/* Tables simples dans l'onglet Ambulances */
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.simple-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 700;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 1;
+}
+.simple-table tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.simple-table tbody tr:hover {
+  background: #f8fafc;
+}
+.simple-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.simple-table .rank {
+  width: 44px;
+  color: #64748b;
 }
 @media (max-width: 900px) {
   .data-graphs { grid-template-columns: 1fr; gap: 1.2rem; }
