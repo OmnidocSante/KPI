@@ -390,7 +390,7 @@ const Data = () => {
 
   const checkboxStyle = {
     position: 'absolute',
-    left: '16px',
+    left: '-50px',
     top: '50%',
     transform: 'translateY(-50%)',
     margin: '0',
@@ -480,229 +480,234 @@ const Data = () => {
         </div>
         {/* Filtres (dépendent de l'onglet actif) */}
         <section className="data-filters">
-          <div style={{ flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <label>Date début :</label>
-            <input style={{ minWidth: 150 }} type="date" value={currentFilters.start} onChange={e => updateCurrentFilters({ start: e.target.value })} />
+          {/* Première ligne de filtres */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: '180px' }}>
+            <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Date début :</label>
+            <input 
+              style={{ minWidth: 130, padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} 
+              type="date" 
+              value={currentFilters.start} 
+              onChange={e => updateCurrentFilters({ start: e.target.value })} 
+            />
           </div>
-          <div style={{ flex: '0 0 auto', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <label>Date fin :</label>
-            <input style={{ minWidth: 150 }} type="date" value={currentFilters.end} onChange={e => updateCurrentFilters({ end: e.target.value })} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: '180px' }}>
+            <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Date fin :</label>
+            <input 
+              style={{ minWidth: 130, padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }} 
+              type="date" 
+              value={currentFilters.end} 
+              onChange={e => updateCurrentFilters({ end: e.target.value })} 
+            />
           </div>
+
+          {/* Ambulance: visible pour Ambulances et CA Global */}
           {['ambulances','ca-global'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>Ambulance :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'ambulance' ? null : 'ambulance')}
-            >
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Ambulance :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'ambulance' ? null : 'ambulance')}
+              >
                 {getSelectedText(currentFilters.ambulances, ambulances, 'numberPlate')}
-            </button>
-            {openDropdown === 'ambulance' ? (
-              <div style={dropdownContentStyle}>
-                {ambulances.map(a => (
-                  <div 
-                    key={a.id} 
-                    style={dropdownItemStyle}
-                    onMouseEnter={handleDropdownItemHover}
-                    onMouseLeave={handleDropdownItemLeave}
+              </button>
+              {openDropdown === 'ambulance' ? (
+                <div style={dropdownContentStyle}>
+                  {ambulances.map(a => (
+                    <div 
+                      key={a.id} 
+                      style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
                       onClick={() => updateCurrentFilters({ ambulances: currentFilters.ambulances.includes(String(a.id)) ? currentFilters.ambulances.filter(x => x !== String(a.id)) : [...currentFilters.ambulances, String(a.id)] })}
-                  >
-                    <input 
-                      type="checkbox" 
+                    >
+                      <input 
+                        type="checkbox" 
                         checked={currentFilters.ambulances.includes(String(a.id))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {a.numberPlate}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          )}
-              {/* Ville: visible pour Ambulances, Villes, CA Global, CA Global / BU, CA Produit Global, CA Produit / BU, CA BU / ASSURANCE, CA BU / BTOB, CA BU / BTOC et CA ASSURANCE / WAFA IMA */}
-    {['ambulances', 'villes', 'ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc', 'ca-assurance-wafa-ima'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>Ville :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'ville' ? null : 'ville')}
-            >
-                {getSelectedText(currentFilters.villes, villes)}
-            </button>
-            {openDropdown === 'ville' && (
-              <div style={dropdownContentStyle}>
-                {villes.map(v => (
-                  <div 
-                    key={v.id} 
-                    style={dropdownItemStyle}
-                    onMouseEnter={handleDropdownItemHover}
-                    onMouseLeave={handleDropdownItemLeave}
-                      onClick={() => updateCurrentFilters({ villes: currentFilters.villes.includes(String(v.id)) ? currentFilters.villes.filter(x => x !== String(v.id)) : [...currentFilters.villes, String(v.id)] })}
-                  >
-                    <input 
-                      type="checkbox" 
-                        checked={currentFilters.villes.includes(String(v.id))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {v.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {a.numberPlate}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           )}
 
-          {/* Business Unit: visible pour Ambulances, BU, CA Global, CA Global / BU et CA Produit Global */}
+          {/* Ville: visible pour plusieurs onglets */}
+          {['ambulances', 'villes', 'ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc', 'ca-assurance-wafa-ima'].includes(activeTab) && (
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Ville :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'ville' ? null : 'ville')}
+              >
+                {getSelectedText(currentFilters.villes, villes)}
+              </button>
+              {openDropdown === 'ville' && (
+                <div style={dropdownContentStyle}>
+                  {villes.map(v => (
+                    <div 
+                      key={v.id} 
+                      style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
+                      onClick={() => updateCurrentFilters({ villes: currentFilters.villes.includes(String(v.id)) ? currentFilters.villes.filter(x => x !== String(v.id)) : [...currentFilters.villes, String(v.id)] })}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={currentFilters.villes.includes(String(v.id))}
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {v.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Business Unit: visible pour plusieurs onglets */}
           {['ambulances', 'bu', 'ca-global', 'ca-global-bu', 'ca-produit-global'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>Business Unit :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'bu' ? null : 'bu')}
-            >
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Business Unit :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'bu' ? null : 'bu')}
+              >
                 {getSelectedText(currentFilters.bu, businessUnits, 'businessUnitType')}
-            </button>
-            {openDropdown === 'bu' && (
-              <div style={dropdownContentStyle}>
-                {businessUnits.map(bu => (
-                  <div 
-                    key={bu.id} 
-                    style={dropdownItemStyle}
+              </button>
+              {openDropdown === 'bu' && (
+                <div style={dropdownContentStyle}>
+                  {businessUnits.map(bu => (
+                    <div 
+                      key={bu.id} 
+                      style={dropdownItemStyle}
                       onClick={() => updateCurrentFilters({ bu: currentFilters.bu.includes(String(bu.id)) ? currentFilters.bu.filter(x => x !== String(bu.id)) : [...currentFilters.bu, String(bu.id)] })}
-                  >
-                    <input 
-                      type="checkbox" 
+                    >
+                      <input 
+                        type="checkbox" 
                         checked={currentFilters.bu.includes(String(bu.id))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {bu.businessUnitType}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {bu.businessUnitType}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* État: visible pour Global, Paiement et CA Global / BU */}
           {['global', 'paiement', 'ca-global-bu'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>État paiement :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'etat' ? null : 'etat')}
-            >
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>État paiement :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'etat' ? null : 'etat')}
+              >
                 {getSelectedTextEtat(currentFilters.etats, Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean))))}
-            </button>
-            {openDropdown === 'etat' && (
-              <div style={dropdownContentStyle}>
-                {Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean))).map(etat => (
-                  <div 
-                    key={etat} 
-                    style={dropdownItemStyle}
+              </button>
+              {openDropdown === 'etat' && (
+                <div style={dropdownContentStyle}>
+                  {Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean))).map(etat => (
+                    <div 
+                      key={etat} 
+                      style={dropdownItemStyle}
                       onClick={() => updateCurrentFilters({ etats: currentFilters.etats.includes(String(etat)) ? currentFilters.etats.filter(x => x !== String(etat)) : [...currentFilters.etats, String(etat)] })}
-                  >
-                    <input 
-                      type="checkbox" 
+                    >
+                      <input 
+                        type="checkbox" 
                         checked={currentFilters.etats.includes(String(etat))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {etat}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {etat}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-          {/* Produits: visible pour CA Global, onglets Produits et CA Global / BU */}
+          {/* Produits: visible pour plusieurs onglets */}
           {['ca-global','ca-produit-global', 'ca-produit-bu', 'ca-global-bu'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>Produit :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'produit' ? null : 'produit')}
-            >
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Produit :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'produit' ? null : 'produit')}
+              >
                 {getSelectedText(currentFilters.produits, produits)}
-            </button>
-            {openDropdown === 'produit' && (
-              <div style={{...dropdownContentStyle, minWidth: '240px'}}>
-                {produits.map(p => (
-                  <div 
-                    key={p.id} 
-                    style={dropdownItemStyle}
+              </button>
+              {openDropdown === 'produit' && (
+                <div style={{...dropdownContentStyle, minWidth: '240px'}}>
+                  {produits.map(p => (
+                    <div 
+                      key={p.id} 
+                      style={dropdownItemStyle}
                       onClick={() => updateCurrentFilters({ produits: currentFilters.produits.includes(String(p.id)) ? currentFilters.produits.filter(x => x !== String(p.id)) : [...currentFilters.produits, String(p.id)] })}
-                  >
-                    <input 
-                      type="checkbox" 
+                    >
+                      <input 
+                        type="checkbox" 
                         checked={currentFilters.produits.includes(String(p.id))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {p.name}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {p.name}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
-              {/* Client: visible pour Ambulances, CA Global, CA Global / BU, CA Produit Global, CA Produit / BU et CA BU / ASSURANCE */}
-    {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance'].includes(activeTab) && (
-          <div style={{ ...dropdownStyle, flex: '0 0 auto' }} className="dropdown-container">
-            <label>Client :</label>
-            <button 
-              style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-              onClick={() => setOpenDropdown(openDropdown === 'client' ? null : 'client')}
-            >
+          {/* Client: visible pour plusieurs onglets */}
+          {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance'].includes(activeTab) && (
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Client :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => setOpenDropdown(openDropdown === 'client' ? null : 'client')}
+              >
                 {getSelectedText(currentFilters.clients, clients, 'clientFullName')}
-            </button>
-            {openDropdown === 'client' ? (
-              <div style={dropdownContentStyle}>
-                {clients.filter(client => {
-                  // Vérifier si ce client a des données d'assurance
-                  return filtered.some(g => {
-                    if (!g.clientId || !g.businessUnitId) return false;
-                    
-                    // Vérifier que c'est bien ce client
-                    if (String(g.clientId) !== String(client.id)) return false;
-                    
-                    // Vérifier que c'est bien une assurance
-                    const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
-                    return bu && bu.businessUnitType === 'Assurance';
-                  });
-                }).map(c => (
-                  <div 
-                    key={c.id} 
-                    style={dropdownItemStyle}
+              </button>
+              {openDropdown === 'client' ? (
+                <div style={dropdownContentStyle}>
+                  {clients.filter(client => {
+                    // Vérifier si ce client a des données d'assurance
+                    return filtered.some(g => {
+                      if (!g.clientId || !g.businessUnitId) return false;
+                      
+                      // Vérifier que c'est bien ce client
+                      if (String(g.clientId) !== String(client.id)) return false;
+                      
+                      // Vérifier que c'est bien une assurance
+                      const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
+                      return bu && bu.businessUnitType === 'Assurance';
+                    });
+                  }).map(c => (
+                    <div 
+                      key={c.id} 
+                      style={dropdownItemStyle}
                       onClick={() => updateCurrentFilters({ clients: currentFilters.clients.includes(String(c.id)) ? currentFilters.clients.filter(x => x !== String(c.id)) : [...currentFilters.clients, String(c.id)] })}
-                  >
-                    <input 
-                      type="checkbox" 
+                    >
+                      <input 
+                        type="checkbox" 
                         checked={currentFilters.clients.includes(String(c.id))}
-                      onChange={() => {}}
-                      style={checkboxStyle}
-                    />
-                    {c.clientFullName}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {c.clientFullName}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           )}
-
-
-
-
-
-
-
-          {/* Ambulance: visible uniquement pour l'onglet Ambulances */}
-          
-          
         </section>
         {/* Contenu de l'onglet actif */}
         <section className="data-graphs">
