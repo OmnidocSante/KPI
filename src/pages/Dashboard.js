@@ -1007,6 +1007,19 @@ const Dashboard = () => {
                   </select>
                   {formErrors.businessUnitType && <span style={{color:'#d32f2f', fontSize:'0.9em'}}><span role="img" aria-label="error">❗</span> {formErrors.businessUnitType}</span>}
                 </div>
+
+                <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="client">👤</span> Client</label>
+                  <select name="client" value={isB2C(formData.businessUnitType, businessUnits) ? '' : formData.client} onChange={handleChange} disabled={isB2C(formData.businessUnitType, businessUnits)}>
+                    <option value="">Sélectionnez un client</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.clientFullName}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="ref">#</span> Référence</label>
+                  <input type="text" name="reference" value={formData.reference} onChange={handleChange} placeholder="Référence" />
+                </div>
+
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="pill">💊</span> Produit</label>
                   <select name="produit" value={formData.produit} onChange={handleChange}>
@@ -1051,15 +1064,35 @@ const Dashboard = () => {
                     {villes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
                   </select>
                 </div>
-
-              {/* Ligne 2 */}
                 <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> État de Paiement</label>
-                  <select name="etatPaiement" value={formData.etatPaiement} onChange={handleChange}>
-                    <option value="Non">Non</option>
-                    <option value="Oui">Oui</option>
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="ambulance">🚑</span> Ambulance</label>
+                  <select name="ambulance" value={isAmbulanceRequired(formData.produit, produits) ? formData.ambulance : ''} onChange={handleChange} disabled={!isAmbulanceRequired(formData.produit, produits)}>
+                    <option value="">Sélectionnez une ambulance</option>
+                    {ambulances.map(a => <option key={a.id} value={a.id}>{a.numberPlate}</option>)}
                   </select>
                 </div>
+              {/* Ligne 2 */}
+              
+          
+  
+                <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="id">🆔</span> Nom - Prénom</label>
+                  <input type="text" name="nomPrenom" value={formData.nomPrenom} onChange={handleChange} placeholder="Votre nom et prénom ici" />
+                </div>
+
+              {/* Ligne 3 */}
+
+          
+              
+                <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="phone">📞</span> Numéro</label>
+                  <input type="text" name="numero" value={formData.numero} onChange={handleChange} placeholder="Numéro" />
+                </div>
+                <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="calendar">📅</span> Date d'intervention</label>
+                  <input type="date" name="dateIntervention" value={formData.dateIntervention} onChange={handleChange} placeholder="jj/mm/aaaa" />
+                </div>
+
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="money">💶</span> CA TTC</label>
                   <input 
@@ -1079,40 +1112,24 @@ const Dashboard = () => {
                     placeholder="0.00 ou 0,00"
                   />
                 </div>
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="client">👤</span> Client</label>
-                  <select name="client" value={isB2C(formData.businessUnitType, businessUnits) ? '' : formData.client} onChange={handleChange} disabled={isB2C(formData.businessUnitType, businessUnits)}>
-                    <option value="">Sélectionnez un client</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.clientFullName}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="id">🆔</span> Nom - Prénom</label>
-                  <input type="text" name="nomPrenom" value={formData.nomPrenom} onChange={handleChange} placeholder="Votre nom et prénom ici" />
-                </div>
-
-              {/* Ligne 3 */}
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="ambulance">🚑</span> Ambulance</label>
-                  <select name="ambulance" value={isAmbulanceRequired(formData.produit, produits) ? formData.ambulance : ''} onChange={handleChange} disabled={!isAmbulanceRequired(formData.produit, produits)}>
-                    <option value="">Sélectionnez une ambulance</option>
-                    {ambulances.map(a => <option key={a.id} value={a.id}>{a.numberPlate}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="ref">#</span> Référence</label>
-                  <input type="text" name="reference" value={formData.reference} onChange={handleChange} placeholder="Référence" />
-                </div>
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="calendar">📅</span> Date d'intervention</label>
-                  <input type="date" name="dateIntervention" value={formData.dateIntervention} onChange={handleChange} placeholder="jj/mm/aaaa" />
-                </div>
-                <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="phone">📞</span> Numéro</label>
-                  <input type="text" name="numero" value={formData.numero} onChange={handleChange} placeholder="Numéro" />
-                </div>
-
               {/* Ligne 4 */}
+              <div className="form-group">
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> État de Paiement</label>
+                  <select name="etatPaiement" value={formData.etatPaiement} onChange={handleChange}>
+                    <option value="Non">Non</option>
+                    <option value="Oui">Oui</option>
+                  </select>
+                </div>
+
+              <div className="form-group">
+                <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> Moyen de Paiement</label>
+                <select name="type" value={formData.type} onChange={handleChange}>
+                  <option value="espece">Espèce</option>
+                  <option value="virement">Virement</option>
+                  <option value="cheque">Chèque</option>
+                </select>
+              </div>
+
               <div className="form-group">
                 <label style={{fontWeight:'bold'}}><span role="img" aria-label="note">📝</span> Note</label>
                 <input 
@@ -1130,14 +1147,6 @@ const Dashboard = () => {
                     transition: 'border-color 0.2s'
                   }}
                 />
-              </div>
-              <div className="form-group">
-                <label style={{fontWeight:'bold'}}><span role="img" aria-label="payment">💳</span> Moyen de Paiement</label>
-                <select name="type" value={formData.type} onChange={handleChange}>
-                  <option value="espece">Espèce</option>
-                  <option value="virement">Virement</option>
-                  <option value="cheque">Chèque</option>
-                </select>
               </div>
               <div></div>
               <div></div>

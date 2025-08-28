@@ -513,6 +513,22 @@ const Data = () => {
               </button>
               {openDropdown === 'ambulance' ? (
                 <div style={dropdownContentStyle}>
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ ambulances: ambulances.map(a => String(a.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
                   {ambulances.map(a => (
                     <div 
                       key={a.id} 
@@ -547,6 +563,22 @@ const Data = () => {
               </button>
               {openDropdown === 'ville' && (
                 <div style={dropdownContentStyle}>
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ villes: villes.map(v => String(v.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
                   {villes.map(v => (
                     <div 
                       key={v.id} 
@@ -581,10 +613,28 @@ const Data = () => {
               </button>
               {openDropdown === 'bu' && (
                 <div style={dropdownContentStyle}>
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ bu: businessUnits.map(bu => String(bu.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
                   {businessUnits.map(bu => (
                     <div 
                       key={bu.id} 
                       style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
                       onClick={() => updateCurrentFilters({ bu: currentFilters.bu.includes(String(bu.id)) ? currentFilters.bu.filter(x => x !== String(bu.id)) : [...currentFilters.bu, String(bu.id)] })}
                     >
                       <input 
@@ -645,10 +695,28 @@ const Data = () => {
               </button>
               {openDropdown === 'produit' && (
                 <div style={{...dropdownContentStyle, minWidth: '240px'}}>
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ produits: produits.map(p => String(p.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
                   {produits.map(p => (
                     <div 
                       key={p.id} 
                       style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
                       onClick={() => updateCurrentFilters({ produits: currentFilters.produits.includes(String(p.id)) ? currentFilters.produits.filter(x => x !== String(p.id)) : [...currentFilters.produits, String(p.id)] })}
                     >
                       <input 
@@ -666,7 +734,7 @@ const Data = () => {
           )}
 
           {/* Client: visible pour plusieurs onglets */}
-          {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance'].includes(activeTab) && (
+          {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc'].includes(activeTab) && (
             <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Client :</label>
               <button 
@@ -677,22 +745,28 @@ const Data = () => {
               </button>
               {openDropdown === 'client' ? (
                 <div style={dropdownContentStyle}>
-                  {clients.filter(client => {
-                    // Vérifier si ce client a des données d'assurance
-                    return filtered.some(g => {
-                      if (!g.clientId || !g.businessUnitId) return false;
-                      
-                      // Vérifier que c'est bien ce client
-                      if (String(g.clientId) !== String(client.id)) return false;
-                      
-                      // Vérifier que c'est bien une assurance
-                      const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
-                      return bu && bu.businessUnitType === 'Assurance';
-                    });
-                  }).map(c => (
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ clients: clients.map(c => String(c.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
+                  {clients.map(c => (
                     <div 
                       key={c.id} 
                       style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
                       onClick={() => updateCurrentFilters({ clients: currentFilters.clients.includes(String(c.id)) ? currentFilters.clients.filter(x => x !== String(c.id)) : [...currentFilters.clients, String(c.id)] })}
                     >
                       <input 
