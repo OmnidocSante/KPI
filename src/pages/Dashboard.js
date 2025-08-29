@@ -1231,49 +1231,7 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="filters-section">
-              {/* Barre de recherche */}
-              <div className="search-section" style={{
-                marginBottom: '1rem',
-                padding: '1rem',
-                background: '#f8f9fa',
-                borderRadius: '8px',
-                border: '1px solid #e9ecef'
-              }}>
-                <div className="search-group" style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
-                  <label style={{fontWeight: 'bold', minWidth: '120px'}}>
-                    <span role="img" aria-label="search">🔍</span> Recherche globale
-                  </label>
-                  <input
-                    type="text"
-                    name="recherche"
-                    value={filtres.recherche}
-                    onChange={handleFiltreChange}
-                    placeholder="Rechercher dans toutes les colonnes..."
-                    style={{
-                      flex: 1,
-                      padding: '0.5rem 1rem',
-                      border: '1px solid #ced4da',
-                      borderRadius: '4px',
-                      fontSize: '1rem'
-                    }}
-                  />
-                  {filtres.recherche && (
-                    <button
-                      onClick={() => setFiltres(prev => ({...prev, recherche: ''}))}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: '#6c757d',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Effacer
-                    </button>
-                  )}
-                </div>
-              </div>
+           
               
               {/* Première ligne - Filtres principaux */}
               <div className="filters-grid">
@@ -1573,6 +1531,8 @@ const Dashboard = () => {
                     className="date-input"
                   />
                 </div>
+                <div></div>
+                
 
                 
 
