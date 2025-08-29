@@ -447,7 +447,7 @@ const Dashboard = () => {
   const [filterProduit, setFilterProduit] = useState([]);
   const [filterMedecin, setFilterMedecin] = useState([]);
   const [filterEtatPaiement, setFilterEtatPaiement] = useState([]);
-    const [filterCaTTC, setFilterCaTTC] = useState({ min: '', max: '' });
+  
   const [dropdownOpen, setDropdownOpen] = useState({
     ville: false,
     produit: false,
@@ -729,12 +729,7 @@ const Dashboard = () => {
     );
   };
 
-  const handleFilterCaTTCChange = (type, value) => {
-    setFilterCaTTC(prev => ({
-      ...prev,
-      [type]: value
-    }));
-  };
+
 
   const handleFiltreChange = (e) => {
     setFiltres({
@@ -744,38 +739,89 @@ const Dashboard = () => {
   };
 
   const globalesFiltered = globales.filter(item => {
-    // Client (multi-sélection)
-    if (filterClient.length > 0 && !filterClient.includes(String(item.clientId))) return false;
-    // Ambulance (multi-sélection)
-    if (filterAmbulance.length > 0 && !filterAmbulance.includes(String(item.aumbulanceId))) return false;
-    // Référence (multi-sélection)
-    if (filterRef.length > 0 && !filterRef.includes(item.Ref)) return false;
-    // Business Unit (multi-sélection)
-    if (filterBU.length > 0 && !filterBU.includes(String(item.businessUnitId))) return false;
-    // Date Début
-    if (filterDateStart && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) < new Date(filterDateStart).setHours(0,0,0,0)) return false;
-    // Date Fin
-    if (filterDateEnd && item.dateCreation && new Date(item.dateCreation).setHours(0,0,0,0) > new Date(filterDateEnd).setHours(0,0,0,0)) return false;
-    
-    // Nouveaux filtres
-    // Ville (multi-sélection)
-    if (filterVille.length > 0 && !filterVille.includes(String(item.villeId))) return false;
-    
-    // Produit (multi-sélection)
-    if (filterProduit.length > 0 && !filterProduit.includes(String(item.produitId))) return false;
-    
-    // Médecin/Infirmier (multi-sélection)
-    if (filterMedecin.length > 0) {
-      const medecinId = isInfirmierAct(item.produitId, produits) ? item.infermierId : item.medcienId;
-      if (!filterMedecin.includes(String(medecinId))) return false;
+    // Recherche textuelle
+    if (filtres.recherche && filtres.recherche.trim()) {
+      const searchTerm = filtres.recherche.toLowerCase();
+      const searchableFields = [
+        item.Ref || '',
+        item.fullName || '',
+        item.numTelephone || '',
+        item.note || '',
+        getVilleName(item.villeId),
+        getProduitName(item.produitId),
+        getClientName(item.clientId),
+        getBUType(item.businessUnitId),
+        getAmbulanceName(item.aumbulanceId),
+        isInfirmierAct(item.produitId, produits) 
+          ? getNom(infirmiers, item.infermierId, 'nom')
+          : getMedecinName(item.medcienId)
+      ].join(' ').toLowerCase();
+      
+      if (!searchableFields.includes(searchTerm)) return false;
+    }
+
+    // Client (multi-sélection) - gérer les valeurs nulles
+    if (filterClient.length > 0) {
+      if (!item.clientId || !filterClient.includes(String(item.clientId))) return false;
     }
     
-    // État de paiement (multi-sélection)
-    if (filterEtatPaiement.length > 0 && !filterEtatPaiement.includes(item.etatdePaiment)) return false;
+    // Ambulance (multi-sélection) - gérer les valeurs nulles
+    if (filterAmbulance.length > 0) {
+      if (!item.aumbulanceId || !filterAmbulance.includes(String(item.aumbulanceId))) return false;
+    }
     
-    // CA TTC (plage min-max)
-    if (filterCaTTC.min && parseFloat(item.caTTC) < parseFloat(filterCaTTC.min)) return false;
-    if (filterCaTTC.max && parseFloat(item.caTTC) > parseFloat(filterCaTTC.max)) return false;
+         // Référence (recherche partielle) - gérer les valeurs nulles
+     if (filterRef.length > 0) {
+       if (!item.Ref) return false;
+       // Vérifier si au moins une des références du filtre est contenue dans la référence de l'item
+       const itemRef = item.Ref.toLowerCase();
+       const hasMatchingRef = filterRef.some(filterRefItem => 
+         itemRef.includes(filterRefItem.toLowerCase())
+       );
+       if (!hasMatchingRef) return false;
+     }
+    
+    // Business Unit (multi-sélection) - gérer les valeurs nulles
+    if (filterBU.length > 0) {
+      if (!item.businessUnitId || !filterBU.includes(String(item.businessUnitId))) return false;
+    }
+    
+    // Date Début - gérer les valeurs nulles
+    if (filterDateStart && item.dateCreation) {
+      const itemDate = new Date(item.dateCreation);
+      const startDate = new Date(filterDateStart);
+      if (itemDate.setHours(0,0,0,0) < startDate.setHours(0,0,0,0)) return false;
+    }
+    
+    // Date Fin - gérer les valeurs nulles
+    if (filterDateEnd && item.dateCreation) {
+      const itemDate = new Date(item.dateCreation);
+      const endDate = new Date(filterDateEnd);
+      if (itemDate.setHours(0,0,0,0) > endDate.setHours(0,0,0,0)) return false;
+    }
+    
+    // Ville (multi-sélection) - gérer les valeurs nulles
+    if (filterVille.length > 0) {
+      if (!item.villeId || !filterVille.includes(String(item.villeId))) return false;
+    }
+    
+    // Produit (multi-sélection) - gérer les valeurs nulles
+    if (filterProduit.length > 0) {
+      if (!item.produitId || !filterProduit.includes(String(item.produitId))) return false;
+    }
+    
+    // Médecin/Infirmier (multi-sélection) - gérer les valeurs nulles
+    if (filterMedecin.length > 0) {
+      const medecinId = isInfirmierAct(item.produitId, produits) ? item.infermierId : item.medcienId;
+      if (!medecinId || !filterMedecin.includes(String(medecinId))) return false;
+    }
+    
+    // État de paiement (multi-sélection) - gérer les valeurs nulles
+    if (filterEtatPaiement.length > 0) {
+      if (!item.etatdePaiment || !filterEtatPaiement.includes(item.etatdePaiment)) return false;
+    }
+    
+    
     
     return true;
   });
@@ -926,7 +972,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement, filterCaTTC]);
+  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement]);
 
   const handleDownloadExcel = () => {
     // Préparer les données pour l'export
@@ -1185,7 +1231,49 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="filters-section">
-              
+              {/* Barre de recherche */}
+              <div className="search-section" style={{
+                marginBottom: '1rem',
+                padding: '1rem',
+                background: '#f8f9fa',
+                borderRadius: '8px',
+                border: '1px solid #e9ecef'
+              }}>
+                <div className="search-group" style={{display: 'flex', alignItems: 'center', gap: '1rem'}}>
+                  <label style={{fontWeight: 'bold', minWidth: '120px'}}>
+                    <span role="img" aria-label="search">🔍</span> Recherche globale
+                  </label>
+                  <input
+                    type="text"
+                    name="recherche"
+                    value={filtres.recherche}
+                    onChange={handleFiltreChange}
+                    placeholder="Rechercher dans toutes les colonnes..."
+                    style={{
+                      flex: 1,
+                      padding: '0.5rem 1rem',
+                      border: '1px solid #ced4da',
+                      borderRadius: '4px',
+                      fontSize: '1rem'
+                    }}
+                  />
+                  {filtres.recherche && (
+                    <button
+                      onClick={() => setFiltres(prev => ({...prev, recherche: ''}))}
+                      style={{
+                        padding: '0.5rem 1rem',
+                        background: '#6c757d',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Effacer
+                    </button>
+                  )}
+                </div>
+              </div>
               
               {/* Première ligne - Filtres principaux */}
               <div className="filters-grid">
@@ -1378,48 +1466,82 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="filter-group">
-                  <label>🔢 Référence</label>
-                  <div className={`dropdown-container ${dropdownOpen.ref ? 'open' : ''}`} ref={el => dropdownRefs.current.ref = el}>
-                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, ref: !prev.ref}))}>
-                      <span>{filterRef.length > 0 ? `${filterRef.length} référence(s)` : 'Ajouter des références'}</span>
-                      <span className="dropdown-arrow">▼</span>
-                    </div>
+                                 <div className="filter-group">
+                   <label>🔢 Référence</label>
+                   <div className={`dropdown-container ${dropdownOpen.ref ? 'open' : ''}`} ref={el => dropdownRefs.current.ref = el}>
+                     <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, ref: !prev.ref}))}>
+                       <span>{filterRef.length > 0 ? `${filterRef.length} terme(s)` : 'Ajouter des termes de recherche'}</span>
+                       <span className="dropdown-arrow">▼</span>
+                     </div>
                     {dropdownOpen.ref && (
                       <div className="dropdown-content">
-                        <div className="ref-input-section">
-                          <input
-                            type="text"
-                            placeholder="Tapez une référence..."
-                            value={newRefInput}
-                            onChange={(e) => setNewRefInput(e.target.value)}
-                            onKeyPress={(e) => {
-                              if (e.key === 'Enter') {
-                                handleAddRef(newRefInput);
-                              }
-                            }}
-                            className="ref-input"
-                          />
-                          <button 
-                            type="button" 
-                            onClick={() => handleAddRef(newRefInput)}
-                            className="add-ref-btn"
-                            disabled={!newRefInput.trim()}
-                          >
-                            ➕ Ajouter
-                          </button>
-                        </div>
-                        {filterRef.length > 0 && (
-                          <div className="ref-list">
-                            <div className="ref-list-title">Références sélectionnées :</div>
+                                                 <div className="ref-input-section">
+                           <input
+                             type="text"
+                             placeholder="Référence"
+                             value={newRefInput}
+                             style={{
+                               width: '88%',
+                               padding: '0.5rem 1rem',
+                               border: '1px solid #ced4da',
+                               borderRadius: '4px',
+                               fontSize: '1rem'
+                             }}
+                             onChange={(e) => setNewRefInput(e.target.value)}
+                             onKeyPress={(e) => {
+                               if (e.key === 'Enter') {
+                                 handleAddRef(newRefInput);
+                               }
+                             }}
+                             className="ref-input"
+                           />
+                           <button 
+                             type="button" 
+                             onClick={() => handleAddRef(newRefInput)}
+                             className="add-ref-btn"
+                             disabled={!newRefInput.trim()}
+                           >
+                             ➕ Ajouter
+                           </button>
+                         </div>
+                                                 {filterRef.length > 0 && (
+                           <div className="ref-list">
+                             <div className="ref-list-title">Termes de recherche :</div>
                             {filterRef.map((ref, index) => (
-                              <div key={index} className="checkbox-label">
+                              <div key={index} className="checkbox-label" style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.25rem 0',
+                                borderBottom: '1px solid #eee'
+                              }}>
                                 <input
                                   type="checkbox"
-                                  checked={filterRef.includes(ref)}
+                                  checked={true}
                                   onChange={() => handleRemoveRef(index)}
+                                  style={{ cursor: 'pointer' }}
                                 />
-                                <span>{ref}</span>
+                                <span style={{ flex: 1 }}>{ref}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveRef(index)}
+                                  style={{
+                                    background: '#ff4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '20px',
+                                    height: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                  title="Supprimer cette référence"
+                                >
+                                  ×
+                                </button>
                               </div>
                             ))}
                           </div>
@@ -1452,9 +1574,7 @@ const Dashboard = () => {
                   />
                 </div>
 
-                <div className="filter-group">
-                 
-                </div>
+                
 
                 <div className="filter-group filter-actions">
                   <label>&nbsp;</label>
@@ -1472,7 +1592,8 @@ const Dashboard = () => {
                       setFilterProduit([]);
                       setFilterMedecin([]);
                       setFilterEtatPaiement([]);
-                      setFilterCaTTC({ min: '', max: '' });
+                      
+                      setFiltres(prev => ({ ...prev, recherche: '' }));
                     }}
                   >
                     <span role="img" aria-label="reset">🔄</span>
