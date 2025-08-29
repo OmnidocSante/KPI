@@ -163,20 +163,23 @@ const updateGlobale = async (req, res) => {
   }
 };
 
-// Supprimer une globale (hard delete)
+// Supprimer une globale (soft delete)
 const deleteGlobale = async (req, res) => {
   try {
+    const now = new Date();
+    
     const [result] = await db.query(
-      'DELETE FROM Globales WHERE id = ?',
-      [req.params.id]
+      'UPDATE Globales SET destroyTime = ? WHERE id = ? AND destroyTime IS NULL',
+      [now, req.params.id]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Globale non trouvée' });
+      return res.status(404).json({ message: 'Globale non trouvée ou déjà supprimée' });
     }
 
-    res.json({ message: 'Globale supprimée définitivement avec succès' });
+    res.json({ message: 'Globale supprimée avec succès (soft delete)' });
   } catch (error) {
+    console.error('Error soft deleting globale:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -205,11 +208,63 @@ const searchGlobales = async (req, res) => {
   }
 };
 
+// Restaurer une globale supprimée (soft delete)
+const restoreGlobale = async (req, res) => {
+  try {
+    const [result] = await db.query(
+      'UPDATE Globales SET destroyTime = NULL WHERE id = ? AND destroyTime IS NOT NULL',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Globale non trouvée ou pas supprimée' });
+    }
+
+    res.json({ message: 'Globale restaurée avec succès' });
+  } catch (error) {
+    console.error('Error restoring globale:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Récupérer toutes les globales supprimées (soft delete)
+const getDeletedGlobales = async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM Globales WHERE destroyTime IS NOT NULL');
+    res.json(rows);
+  } catch (error) {
+    console.error('Error getting deleted globales:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Supprimer définitivement une globale (hard delete - pour les administrateurs)
+const hardDeleteGlobale = async (req, res) => {
+  try {
+    const [result] = await db.query(
+      'DELETE FROM Globales WHERE id = ?',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Globale non trouvée' });
+    }
+
+    res.json({ message: 'Globale supprimée définitivement avec succès' });
+  } catch (error) {
+    console.error('Error hard deleting globale:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getAllGlobales,
   getGlobaleById,
   createGlobale,
   updateGlobale,
   deleteGlobale,
-  searchGlobales
+  searchGlobales,
+  restoreGlobale,
+  getDeletedGlobales,
+  hardDeleteGlobale
 }; 

@@ -9,9 +9,14 @@ router.use(verifyToken);
 // Routes CRUD pour les globales
 router.get('/', globaleController.getAllGlobales);
 router.get('/search', globaleController.searchGlobales);
+router.get('/deleted/list', globaleController.getDeletedGlobales);
 router.get('/:id', globaleController.getGlobaleById);
 router.post('/', globaleController.createGlobale);
 router.put('/:id', globaleController.updateGlobale);
 router.delete('/:id', globaleController.deleteGlobale);
+
+// Nouvelles routes pour la gestion du soft delete
+router.post('/:id/restore', globaleController.restoreGlobale);
+router.delete('/:id/hard', globaleController.hardDeleteGlobale);
 
 module.exports = router; 
