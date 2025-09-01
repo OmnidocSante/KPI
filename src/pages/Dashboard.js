@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
+import '../styles/Dashboard-Responsive.css';
 import api from '../services/api';
 import * as XLSX from 'xlsx';
 
@@ -448,6 +449,10 @@ const Dashboard = () => {
   const [filterMedecin, setFilterMedecin] = useState([]);
   const [filterEtatPaiement, setFilterEtatPaiement] = useState([]);
   
+  // Filtres CA TTC
+  const [filterCaTTCMin, setFilterCaTTCMin] = useState('');
+  const [filterCaTTCMax, setFilterCaTTCMax] = useState('');
+  
   const [dropdownOpen, setDropdownOpen] = useState({
     ville: false,
     produit: false,
@@ -458,6 +463,8 @@ const Dashboard = () => {
     ref: false,
     bu: false
   });
+
+  const [searchTerms, setSearchTerms] = useState({});
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   
@@ -529,6 +536,8 @@ const Dashboard = () => {
           ref: false,
           bu: false
         });
+        // Nettoyer les termes de recherche quand on ferme les dropdowns
+        setSearchTerms({});
       }
     };
 
@@ -821,6 +830,20 @@ const Dashboard = () => {
       if (!item.etatdePaiment || !filterEtatPaiement.includes(item.etatdePaiment)) return false;
     }
     
+    // Filtre CA TTC Min
+    if (filterCaTTCMin && item.caTTC) {
+      const caTTCValue = parseFloat(item.caTTC);
+      const minValue = parseFloat(filterCaTTCMin);
+      if (caTTCValue < minValue) return false;
+    }
+    
+    // Filtre CA TTC Max
+    if (filterCaTTCMax && item.caTTC) {
+      const caTTCValue = parseFloat(item.caTTC);
+      const maxValue = parseFloat(filterCaTTCMax);
+      if (caTTCValue > maxValue) return false;
+    }
+    
     
     
     return true;
@@ -972,7 +995,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement]);
+  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement, filterCaTTCMin, filterCaTTCMax]);
 
   const handleDownloadExcel = () => {
     // Préparer les données pour l'export
@@ -1244,7 +1267,28 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.ville && (
                       <div className="dropdown-content">
-                        {villes.map(ville => (
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher une ville..."
+                          value={searchTerms.ville || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, ville: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {villes
+                          .filter(ville => !searchTerms.ville || ville.name.toLowerCase().includes(searchTerms.ville.toLowerCase()))
+                          .map(ville => (
                           <label key={ville.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1268,7 +1312,28 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.produit && (
                       <div className="dropdown-content">
-                        {produits.map(produit => (
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher un produit..."
+                          value={searchTerms.produit || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, produit: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {produits
+                          .filter(produit => !searchTerms.produit || produit.name.toLowerCase().includes(searchTerms.produit.toLowerCase()))
+                          .map(produit => (
                           <label key={produit.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1292,8 +1357,29 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.medecin && (
                       <div className="dropdown-content">
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher un médecin ou infirmier..."
+                          value={searchTerms.medecin || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, medecin: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
                         <div className="filter-section-title">Médecins</div>
-                        {medciens.map(medecin => (
+                        {medciens
+                          .filter(medecin => !searchTerms.medecin || medecin.name.toLowerCase().includes(searchTerms.medecin.toLowerCase()))
+                          .map(medecin => (
                           <label key={medecin.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1304,7 +1390,9 @@ const Dashboard = () => {
                           </label>
                         ))}
                         <div className="filter-section-title">Infirmiers</div>
-                        {infirmiers.map(infirmier => (
+                        {infirmiers
+                          .filter(infirmier => !searchTerms.medecin || infirmier.nom.toLowerCase().includes(searchTerms.medecin.toLowerCase()))
+                          .map(infirmier => (
                           <label key={`inf_${infirmier.id}`} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1361,7 +1449,28 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.client && (
                       <div className="dropdown-content">
-                        {clients.map(client => (
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher un client..."
+                          value={searchTerms.client || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, client: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {clients
+                          .filter(client => !searchTerms.client || client.clientFullName.toLowerCase().includes(searchTerms.client.toLowerCase()))
+                          .map(client => (
                           <label key={client.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1385,7 +1494,28 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.ambulance && (
                       <div className="dropdown-content">
-                        {ambulances.map(ambulance => (
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher une ambulance..."
+                          value={searchTerms.ambulance || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, ambulance: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {ambulances
+                          .filter(ambulance => !searchTerms.ambulance || ambulance.numberPlate.toLowerCase().includes(searchTerms.ambulance.toLowerCase()))
+                          .map(ambulance => (
                           <label key={ambulance.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1409,7 +1539,28 @@ const Dashboard = () => {
                     </div>
                     {dropdownOpen.bu && (
                       <div className="dropdown-content">
-                        {businessUnits.map(bu => (
+                        {/* Champ de recherche */}
+                        <input
+                          type="text"
+                          placeholder="Rechercher une business unit..."
+                          value={searchTerms.bu || ''}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, bu: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        
+                        {businessUnits
+                          .filter(bu => !searchTerms.bu || bu.businessUnitType.toLowerCase().includes(searchTerms.bu.toLowerCase()))
+                          .map(bu => (
                           <label key={bu.id} className="checkbox-label">
                             <input
                               type="checkbox"
@@ -1531,10 +1682,32 @@ const Dashboard = () => {
                     className="date-input"
                   />
                 </div>
-                <div></div>
                 
-
+                <div className="filter-group">
+                  <label>💶 CA TTC Min</label>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    value={filterCaTTCMin}
+                    onChange={e => setFilterCaTTCMin(e.target.value)}
+                    className="date-input"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
                 
+                <div className="filter-group">
+                  <label>💶 CA TTC Max</label>
+                  <input
+                    type="number"
+                    placeholder="999999.99"
+                    value={filterCaTTCMax}
+                    onChange={e => setFilterCaTTCMax(e.target.value)}
+                    className="date-input"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
 
                 <div className="filter-group filter-actions">
                   <label>&nbsp;</label>
@@ -1552,6 +1725,8 @@ const Dashboard = () => {
                       setFilterProduit([]);
                       setFilterMedecin([]);
                       setFilterEtatPaiement([]);
+                      setFilterCaTTCMin('');
+                      setFilterCaTTCMax('');
                       
                       setFiltres(prev => ({ ...prev, recherche: '' }));
                     }}

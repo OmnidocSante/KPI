@@ -902,3 +902,654 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* ===== RESPONSIVE DESIGN COMPLET ===== */
+
+/* Tablettes et petits écrans (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .main-content {
+    padding: 1.5rem;
+    margin-left: 200px;
+  }
+  
+  .sidebar.collapsed + .main-content {
+    margin-left: 80px;
+  }
+  
+  .data-form {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+  
+  .filters-grid {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.2rem;
+  }
+  
+  .table-container {
+    overflow-x: auto;
+  }
+  
+  .data-table {
+    min-width: 800px;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .table-title {
+    justify-content: center;
+  }
+}
+
+/* Tablettes moyennes (max-width: 900px) */
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  
+  .sidebar.collapsed + .main-content {
+    margin-left: 0;
+  }
+  
+  .data-form {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+  
+  .submit-btn {
+    grid-column: 1/2;
+    justify-self: center;
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .filters-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .filter-group {
+    margin-bottom: 0.5rem;
+  }
+  
+  .form-section {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .filters-section {
+    padding: 1.5rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .table-section {
+    padding: 1.5rem 1rem 1rem 1rem;
+    margin-top: 1.5rem;
+  }
+}
+
+/* Mobiles grands (max-width: 768px) */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 0.8rem;
+  }
+  
+  .dashboard-container {
+    gap: 1.5rem;
+  }
+  
+  .form-section {
+    padding: 1.2rem 0.8rem;
+    border-radius: 12px;
+  }
+  
+  .filters-section {
+    padding: 1.2rem 0.8rem;
+    border-radius: 12px;
+  }
+  
+  .table-section {
+    padding: 1.2rem 0.8rem 1rem 0.8rem;
+    border-radius: 12px;
+  }
+  
+  .form-group label {
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.7rem 0.8rem;
+    font-size: 1rem;
+    height: 44px;
+  }
+  
+  .dropdown-header {
+    padding: 0.6rem 0.8rem;
+    min-height: 44px;
+  }
+  
+  .date-input {
+    padding: 0.6rem 0.8rem;
+    height: 44px;
+  }
+  
+  .table-header {
+    margin-bottom: 1rem;
+  }
+  
+  .table-title {
+    font-size: 1.1rem;
+  }
+  
+  .data-table th {
+    padding: 0.7rem 0.3rem;
+    font-size: 0.95rem;
+  }
+  
+  .data-table td {
+    padding: 0.5rem 0.3rem;
+    font-size: 0.9rem;
+  }
+  
+  .pagination button {
+    padding: 0.25rem 0.6rem;
+    font-size: 1rem;
+    width: 36px;
+  }
+  
+  .reset-filters-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobiles moyens (max-width: 600px) */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 0.5rem;
+  }
+  
+  .form-section {
+    padding: 1rem 0.5rem;
+  }
+  
+  .filters-section {
+    padding: 1rem 0.5rem;
+  }
+  
+  .table-section {
+    padding: 1rem 0.5rem 0.8rem 0.5rem;
+  }
+  
+  .form-group {
+    gap: 0.3rem;
+  }
+  
+  .form-group label {
+    font-size: 0.95rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+    height: 40px;
+  }
+  
+  .dropdown-header {
+    padding: 0.5rem 0.7rem;
+    min-height: 40px;
+  }
+  
+  .date-input {
+    padding: 0.5rem 0.7rem;
+    height: 40px;
+  }
+  
+  .filters-grid {
+    gap: 0.8rem;
+  }
+  
+  .filter-group label {
+    font-size: 0.9rem;
+  }
+  
+  .table-container {
+    border-radius: 8px;
+  }
+  
+  .data-table th {
+    padding: 0.6rem 0.2rem;
+    font-size: 0.85rem;
+  }
+  
+  .data-table td {
+    padding: 0.4rem 0.2rem;
+    font-size: 0.8rem;
+  }
+  
+  .table-footer {
+    font-size: 0.9rem;
+  }
+  
+  .pagination {
+    gap: 0.3rem;
+  }
+  
+  .pagination button {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.9rem;
+    width: 32px;
+  }
+  
+  .reset-filters-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .submit-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.95rem;
+    max-width: 250px;
+  }
+}
+
+/* Mobiles petits (max-width: 480px) */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 0.3rem;
+  }
+  
+  .dashboard-container {
+    gap: 1rem;
+  }
+  
+  .form-section {
+    padding: 0.8rem 0.4rem;
+    border-radius: 8px;
+  }
+  
+  .filters-section {
+    padding: 0.8rem 0.4rem;
+    border-radius: 8px;
+  }
+  
+  .table-section {
+    padding: 0.8rem 0.4rem 0.6rem 0.4rem;
+    border-radius: 8px;
+  }
+  
+  .form-group {
+    gap: 0.25rem;
+  }
+  
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+    height: 38px;
+  }
+  
+  .dropdown-header {
+    padding: 0.4rem 0.6rem;
+    min-height: 38px;
+  }
+  
+  .date-input {
+    padding: 0.4rem 0.6rem;
+    height: 38px;
+  }
+  
+  .filters-grid {
+    gap: 0.6rem;
+  }
+  
+  .filter-group label {
+    font-size: 0.85rem;
+  }
+  
+  .table-header {
+    margin-bottom: 0.8rem;
+  }
+  
+  .table-title {
+    font-size: 1rem;
+  }
+  
+  .data-table th {
+    padding: 0.5rem 0.15rem;
+    font-size: 0.8rem;
+  }
+  
+  .data-table td {
+    padding: 0.3rem 0.15rem;
+    font-size: 0.75rem;
+  }
+  
+  .table-footer {
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+  
+  .pagination {
+    gap: 0.25rem;
+  }
+  
+  .pagination button {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.85rem;
+    width: 28px;
+  }
+  
+  .reset-filters-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  
+  .submit-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    max-width: 200px;
+  }
+  
+  .checkbox-label {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .dropdown-content {
+    max-height: 200px;
+  }
+}
+
+/* Très petits écrans (max-width: 360px) */
+@media (max-width: 360px) {
+  .main-content {
+    padding: 0.2rem;
+  }
+  
+  .form-section {
+    padding: 0.6rem 0.3rem;
+  }
+  
+  .filters-section {
+    padding: 0.6rem 0.3rem;
+  }
+  
+  .table-section {
+    padding: 0.6rem 0.3rem 0.5rem 0.3rem;
+  }
+  
+  .form-group label {
+    font-size: 0.85rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.85rem;
+    height: 36px;
+  }
+  
+  .dropdown-header {
+    padding: 0.3rem 0.5rem;
+    min-height: 36px;
+  }
+  
+  .date-input {
+    padding: 0.3rem 0.5rem;
+    height: 36px;
+  }
+  
+  .data-table th {
+    padding: 0.4rem 0.1rem;
+    font-size: 0.75rem;
+  }
+  
+  .data-table td {
+    padding: 0.25rem 0.1rem;
+    font-size: 0.7rem;
+  }
+  
+  .submit-btn {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    max-width: 180px;
+  }
+}
+
+/* Orientation paysage sur mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .main-content {
+    padding: 0.5rem;
+  }
+  
+  .form-section {
+    padding: 0.8rem 1rem;
+  }
+  
+  .filters-section {
+    padding: 0.8rem 1rem;
+  }
+  
+  .table-section {
+    padding: 0.8rem 1rem 0.6rem 1rem;
+  }
+  
+  .form-group {
+    gap: 0.2rem;
+  }
+  
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    height: 36px;
+    padding: 0.4rem 0.6rem;
+  }
+}
+
+/* Support des écrans haute résolution */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .form-group input,
+  .form-group select,
+  .dropdown-header,
+  .date-input {
+    border-width: 1px;
+  }
+  
+  .checkbox-label input[type="checkbox"] {
+    border-width: 1px;
+  }
+}
+
+/* Support du mode sombre système */
+@media (prefers-color-scheme: dark) {
+  .dashboard-layout {
+    background-color: #1a1a1a;
+  }
+  
+  .form-section,
+  .filters-section,
+  .table-section {
+    background: #2d2d2d;
+    color: #ffffff;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .dropdown-header,
+  .date-input {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #ffffff;
+  }
+  
+  .data-table {
+    background: #2d2d2d;
+    color: #ffffff;
+  }
+  
+  .data-table th {
+    background: #3d3d3d;
+    color: #ffffff;
+  }
+  
+  .data-table td {
+    border-bottom-color: #555;
+  }
+}
+
+/* Amélioration de l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  .dropdown-content,
+  .submit-btn,
+  .reset-filters-btn,
+  .checkbox-label input[type="checkbox"] {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Support des écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+  .checkbox-label:hover,
+  .dropdown-header:hover,
+  .submit-btn:hover,
+  .reset-filters-btn:hover {
+    transform: none;
+  }
+  
+  .checkbox-label:active,
+  .dropdown-header:active,
+  .submit-btn:active,
+  .reset-filters-btn:active {
+    transform: scale(0.98);
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .date-input:focus {
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.3);
+  }
+}
+
+/* ===== RESPONSIVE DESIGN COMPLET POUR FORMULAIRE ===== */
+
+/* Responsive Design pour le formulaire */
+@media (max-width: 1200px) {
+  .data-form {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .data-form {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .form-section {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .data-form {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .form-section {
+    padding: 1.5rem 1rem;
+  }
+  
+  .form-group label {
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.7rem 0.8rem;
+    font-size: 1rem;
+    height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-section {
+    padding: 1rem 0.8rem;
+    border-radius: 12px;
+  }
+  
+  .data-form {
+    gap: 0.8rem;
+  }
+  
+  .form-group {
+    gap: 0.3rem;
+  }
+  
+  .form-group label {
+    font-size: 0.95rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.95rem;
+    height: 40px;
+  }
+  
+  .submit-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.95rem;
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 360px) {
+  .form-section {
+    padding: 0.8rem 0.5rem;
+    border-radius: 8px;
+  }
+  
+  .data-form {
+    gap: 0.6rem;
+  }
+  
+  .form-group label {
+    font-size: 0.9rem;
+  }
+  
+  .form-group input,
+  .form-group select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.9rem;
+    height: 38px;
+  }
+  
+  .submit-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+    min-width: 90px;
+  }
+}

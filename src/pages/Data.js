@@ -18,6 +18,8 @@ const TABS = [
   { key: 'ca-mai', label: 'CA MAI' },
   { key: 'ca-afa', label: 'CA AFA' },
   { key: 'marge-b2b', label: 'Marge B2B' },
+  { key: 'ca-medecin', label: 'CA / Médecin' },
+  { key: 'ca-infirmier', label: 'CA / Infirmier' },
 ];
 
 
@@ -107,16 +109,18 @@ const Data = () => {
   const [businessUnits, setBusinessUnits] = useState([]);
   const [clients, setClients] = useState([]);
   const [ambulances, setAmbulances] = useState([]);
+  const [medecins, setMedecins] = useState([]);
+  const [infirmiers, setInfirmiers] = useState([]);
 
   // Onglet actif
   const [activeTab, setActiveTab] = useState('ambulances');
 
   // Filtres par onglet
   const [tabFilters, setTabFilters] = useState(() => {
-    const base = { start: '', end: '', villes: [], bu: [], produits: [], etats: [], ambulances: [], clients: [], statuts: [], typeMissions: [], zoneGeos: [] };
+    const base = { start: '', end: '', villes: [], bu: [], produits: [], etats: [], ambulances: [], clients: [], statuts: [], typeMissions: [], zoneGeos: [], medecins: [], infirmiers: [] };
     return TABS.reduce((acc, t) => ({ ...acc, [t.key]: { ...base } }), {});
   });
-  const currentFilters = tabFilters[activeTab] || { start: '', end: '', villes: [], bu: [], produits: [], etats: [], ambulances: [], clients: [], statuts: [], typeMissions: [], zoneGeos: [] };
+  const currentFilters = tabFilters[activeTab] || { start: '', end: '', villes: [], bu: [], produits: [], etats: [], ambulances: [], clients: [], statuts: [], typeMissions: [], zoneGeos: [], medecins: [], infirmiers: [] };
   const updateCurrentFilters = (updater) => {
     setTabFilters(prev => ({
       ...prev,
@@ -124,6 +128,18 @@ const Data = () => {
     }));
   };
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [searchTerms, setSearchTerms] = useState({});
+
+  // Fonction pour ouvrir/fermer un dropdown et nettoyer la recherche
+  const toggleDropdown = (dropdownName) => {
+    if (openDropdown === dropdownName) {
+      setOpenDropdown(null);
+      // Nettoyer le terme de recherche quand on ferme le dropdown
+      setSearchTerms(prev => ({ ...prev, [dropdownName]: '' }));
+    } else {
+      setOpenDropdown(dropdownName);
+    }
+  };
 
   // Ajout d'un useEffect pour gérer le clic en dehors du dropdown
   useEffect(() => {
@@ -151,13 +167,15 @@ const Data = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [globalesRes, villesRes, produitsRes, buRes, clientsRes, ambulancesRes] = await Promise.all([
+        const [globalesRes, villesRes, produitsRes, buRes, clientsRes, ambulancesRes, medecinsRes, infirmiersRes] = await Promise.all([
           api.get('/globales'),
           api.get('/villes'),
           api.get('/produits'),
           api.get('/business-units'),
           api.get('/clients'),
           api.get('/ambulances'),
+          api.get('/medecins'),
+          api.get('/infirmiers'),
         ]);
         setGlobales(globalesRes.data);
         setVilles(villesRes.data);
@@ -165,6 +183,8 @@ const Data = () => {
         setBusinessUnits(buRes.data);
         setClients(clientsRes.data);
         setAmbulances(ambulancesRes.data);
+        setMedecins(medecinsRes.data);
+        setInfirmiers(infirmiersRes.data);
       } catch (err) {
         setGlobales([]);
       } finally {
@@ -188,6 +208,8 @@ const Data = () => {
     if (currentFilters.statuts && currentFilters.statuts.length > 0 && !currentFilters.statuts.includes(String(g.statutMission))) return false;
     if (currentFilters.typeMissions && currentFilters.typeMissions.length > 0 && !currentFilters.typeMissions.includes(String(g.typeMission))) return false;
     if (currentFilters.zoneGeos && currentFilters.zoneGeos.length > 0 && !currentFilters.zoneGeos.includes(String(g.zoneGeographique))) return false;
+    if (currentFilters.medecins && currentFilters.medecins.length > 0 && !currentFilters.medecins.includes(String(g.medcienId))) return false;
+    if (currentFilters.infirmiers && currentFilters.infirmiers.length > 0 && !currentFilters.infirmiers.includes(String(g.infermierId))) return false;
     return true;
   });
 
@@ -376,6 +398,17 @@ const Data = () => {
     padding: '0',
   };
 
+  const searchInputStyle = {
+    width: '100%',
+    padding: '8px 12px',
+    border: 'none',
+    borderBottom: '1px solid #e0e0e0',
+    fontSize: '0.9rem',
+    outline: 'none',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px 8px 0 0',
+  };
+
   const dropdownItemStyle = {
     padding: '12px 16px 12px 16px',
     display: 'flex',
@@ -507,12 +540,22 @@ const Data = () => {
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Ambulance :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'ambulance' ? null : 'ambulance')}
+                onClick={() => toggleDropdown('ambulance')}
               >
                 {getSelectedText(currentFilters.ambulances, ambulances, 'numberPlate')}
               </button>
               {openDropdown === 'ambulance' ? (
                 <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher une ambulance..."
+                    value={searchTerms.ambulance || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, ambulance: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
                   {/* Option "Tout" */}
                   <div 
                     style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
@@ -529,7 +572,9 @@ const Data = () => {
                     Tout
                   </div>
                   
-                  {ambulances.map(a => (
+                  {ambulances
+                    .filter(a => !searchTerms.ambulance || a.numberPlate.toLowerCase().includes(searchTerms.ambulance.toLowerCase()))
+                    .map(a => (
                     <div 
                       key={a.id} 
                       style={dropdownItemStyle}
@@ -552,17 +597,27 @@ const Data = () => {
           )}
 
           {/* Ville: visible pour plusieurs onglets */}
-          {['ambulances', 'villes', 'ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc', 'ca-assurance-wafa-ima'].includes(activeTab) && (
+          {['ambulances', 'villes', 'ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc', 'ca-assurance-wafa-ima', 'ca-medecin', 'ca-infirmier'].includes(activeTab) && (
             <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Ville :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'ville' ? null : 'ville')}
+                onClick={() => toggleDropdown('ville')}
               >
                 {getSelectedText(currentFilters.villes, villes)}
               </button>
               {openDropdown === 'ville' && (
                 <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher une ville..."
+                    value={searchTerms.ville || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, ville: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
                   {/* Option "Tout" */}
                   <div 
                     style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
@@ -579,7 +634,9 @@ const Data = () => {
                     Tout
                   </div>
                   
-                  {villes.map(v => (
+                  {villes
+                    .filter(v => !searchTerms.ville || v.name.toLowerCase().includes(searchTerms.ville.toLowerCase()))
+                    .map(v => (
                     <div 
                       key={v.id} 
                       style={dropdownItemStyle}
@@ -607,12 +664,22 @@ const Data = () => {
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Business Unit :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'bu' ? null : 'bu')}
+                onClick={() => toggleDropdown('bu')}
               >
                 {getSelectedText(currentFilters.bu, businessUnits, 'businessUnitType')}
               </button>
               {openDropdown === 'bu' && (
                 <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher une business unit..."
+                    value={searchTerms.bu || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, bu: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
                   {/* Option "Tout" */}
                   <div 
                     style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
@@ -629,7 +696,9 @@ const Data = () => {
                     Tout
                   </div>
                   
-                  {businessUnits.map(bu => (
+                  {businessUnits
+                    .filter(bu => !searchTerms.bu || bu.businessUnitType.toLowerCase().includes(searchTerms.bu.toLowerCase()))
+                    .map(bu => (
                     <div 
                       key={bu.id} 
                       style={dropdownItemStyle}
@@ -652,18 +721,30 @@ const Data = () => {
           )}
 
           {/* État: visible pour Global, Paiement et CA Global / BU */}
-          {['global', 'paiement', 'ca-global-bu'].includes(activeTab) && (
+          {['global', 'paiement', 'ca-global-bu', 'ca-medecin', 'ca-infirmier'].includes(activeTab) && (
             <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>État paiement :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'etat' ? null : 'etat')}
+                onClick={() => toggleDropdown('etat')}
               >
                 {getSelectedTextEtat(currentFilters.etats, Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean))))}
               </button>
               {openDropdown === 'etat' && (
                 <div style={dropdownContentStyle}>
-                  {Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean))).map(etat => (
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher un état de paiement..."
+                    value={searchTerms.etat || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, etat: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
+                  {Array.from(new Set(globales.map(g => g.etatdePaiment).filter(Boolean)))
+                    .filter(etat => !searchTerms.etat || etat.toLowerCase().includes(searchTerms.etat.toLowerCase()))
+                    .map(etat => (
                     <div 
                       key={etat} 
                       style={dropdownItemStyle}
@@ -689,12 +770,22 @@ const Data = () => {
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Produit :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'produit' ? null : 'produit')}
+                onClick={() => toggleDropdown('produit')}
               >
                 {getSelectedText(currentFilters.produits, produits)}
               </button>
               {openDropdown === 'produit' && (
                 <div style={{...dropdownContentStyle, minWidth: '240px'}}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher un produit..."
+                    value={searchTerms.produit || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, produit: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
                   {/* Option "Tout" */}
                   <div 
                     style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
@@ -711,7 +802,9 @@ const Data = () => {
                     Tout
                   </div>
                   
-                  {produits.map(p => (
+                  {produits
+                    .filter(p => !searchTerms.produit || p.name.toLowerCase().includes(searchTerms.produit.toLowerCase()))
+                    .map(p => (
                     <div 
                       key={p.id} 
                       style={dropdownItemStyle}
@@ -734,17 +827,27 @@ const Data = () => {
           )}
 
           {/* Client: visible pour plusieurs onglets */}
-          {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc'].includes(activeTab) && (
+          {['ambulances','ca-global', 'ca-global-bu', 'ca-produit-global', 'ca-produit-bu', 'ca-bu-assurance', 'ca-bu-btob', 'ca-bu-btoc', 'ca-medecin', 'ca-infirmier'].includes(activeTab) && (
             <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
               <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Client :</label>
               <button 
                 style={{ ...dropdownButtonStyle, maxWidth: 220 }}
-                onClick={() => setOpenDropdown(openDropdown === 'client' ? null : 'client')}
+                onClick={() => toggleDropdown('client')}
               >
                 {getSelectedText(currentFilters.clients, clients, 'clientFullName')}
               </button>
               {openDropdown === 'client' ? (
                 <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher un client..."
+                    value={searchTerms.client || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, client: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
                   {/* Option "Tout" */}
                   <div 
                     style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
@@ -761,7 +864,9 @@ const Data = () => {
                     Tout
                   </div>
                   
-                  {clients.map(c => (
+                  {clients
+                    .filter(c => !searchTerms.client || c.clientFullName.toLowerCase().includes(searchTerms.client.toLowerCase()))
+                    .map(c => (
                     <div 
                       key={c.id} 
                       style={dropdownItemStyle}
@@ -780,6 +885,138 @@ const Data = () => {
                   ))}
                 </div>
               ) : null}
+            </div>
+          )}
+
+          {/* Médecin: visible pour l'onglet CA / Médecin */}
+          {activeTab === 'ca-medecin' && (
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Médecin :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => toggleDropdown('medecin')}
+              >
+                {getSelectedText(currentFilters.medecins || [], medecins, 'name')}
+              </button>
+              {openDropdown === 'medecin' && (
+                <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher un médecin..."
+                    value={searchTerms.medecin || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, medecin: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ medecins: medecins.map(m => String(m.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
+                  {medecins
+                    .filter(m => {
+                      const searchTerm = searchTerms.medecin || '';
+                      const medecinName = m.name || `${m.nom || ''} ${m.prenom || ''}`.trim();
+                      return !searchTerm || medecinName.toLowerCase().includes(searchTerm.toLowerCase());
+                    })
+                    .map(m => (
+                    <div 
+                      key={m.id} 
+                      style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
+                      onClick={() => updateCurrentFilters({ medecins: (currentFilters.medecins || []).includes(String(m.id)) ? (currentFilters.medecins || []).filter(x => x !== String(m.id)) : [...(currentFilters.medecins || []), String(m.id)] })}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={(currentFilters.medecins || []).includes(String(m.id))}
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {m.name || `${m.nom || ''} ${m.prenom || ''}`.trim()}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Infirmier: visible pour l'onglet CA / Infirmier */}
+          {activeTab === 'ca-infirmier' && (
+            <div style={{ ...dropdownStyle, minWidth: '200px' }} className="dropdown-container">
+              <label style={{ whiteSpace: 'nowrap', color: '#1976d2', fontWeight: 500 }}>Infirmier :</label>
+              <button 
+                style={{ ...dropdownButtonStyle, maxWidth: 220 }}
+                onClick={() => toggleDropdown('infirmier')}
+              >
+                {getSelectedText(currentFilters.infirmiers || [], infirmiers, 'nom')}
+              </button>
+              {openDropdown === 'infirmier' && (
+                <div style={dropdownContentStyle}>
+                  {/* Champ de recherche */}
+                  <input
+                    type="text"
+                    placeholder="Rechercher un infirmier..."
+                    value={searchTerms.infirmier || ''}
+                    onChange={(e) => setSearchTerms(prev => ({ ...prev, infirmier: e.target.value }))}
+                    style={searchInputStyle}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  
+                  {/* Option "Tout" */}
+                  <div 
+                    style={{...dropdownItemStyle, backgroundColor: '#f8f9fa', fontWeight: 'bold', borderBottom: '2px solid #dee2e6'}}
+                    onMouseEnter={handleDropdownItemHover}
+                    onMouseLeave={handleDropdownItemLeave}
+                    onClick={() => updateCurrentFilters({ infirmiers: infirmiers.map(i => String(i.id)) })}
+                  >
+                    <input 
+                      type="checkbox" 
+                      checked={false}
+                      onChange={() => {}}
+                      style={checkboxStyle}
+                    />
+                    Tout
+                  </div>
+                  
+                  {infirmiers
+                    .filter(i => {
+                      const searchTerm = searchTerms.infirmier || '';
+                      const infirmierName = `${i.nom || ''} ${i.prenom || ''}`.trim();
+                      return !searchTerm || infirmierName.toLowerCase().includes(searchTerm.toLowerCase());
+                    })
+                    .map(i => (
+                    <div 
+                      key={i.id} 
+                      style={dropdownItemStyle}
+                      onMouseEnter={handleDropdownItemHover}
+                      onMouseLeave={handleDropdownItemLeave}
+                      onClick={() => updateCurrentFilters({ infirmiers: (currentFilters.infirmiers || []).includes(String(i.id)) ? (currentFilters.infirmiers || []).filter(x => x !== String(i.id)) : [...(currentFilters.infirmiers || []), String(i.id)] })}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={(currentFilters.infirmiers || []).includes(String(i.id))}
+                        onChange={() => {}}
+                        style={checkboxStyle}
+                      />
+                      {i.nom} {i.prenom}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -3380,6 +3617,392 @@ const Data = () => {
                       <Bar dataKey="margeBeneficiaire" fill="#32CD32" />
                     </BarChart>
                   </ResponsiveContainer>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '400px',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}>
+                    {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : activeTab === 'ca-medecin' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1rem' }}>
+              {/* Tableau détaillé - CA par Médecin / Produit avec nombre de fois */}
+              <div className="graph-block">
+                <h4>CA par Médecin / Produit (ACTE MEDECIN & TAM)</h4>
+                {!loading && filtered.length > 0 ? (
+                  <div style={{ overflowX: 'auto', maxHeight: '600px', overflowY: 'auto' }}>
+                    <table className="simple-table">
+                      <thead>
+                        <tr>
+                          <th>Médecin</th>
+                          <th>Client</th>
+                          <th className="num">ACTE MEDECIN (CA)</th>
+                          <th className="num">ACTE MEDECIN (Nb)</th>
+                          <th className="num">TAM (CA)</th>
+                          <th className="num">TAM (Nb)</th>
+                          <th className="num">Total CA</th>
+                          <th className="num">Total Missions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const medecinClientData = {};
+                          
+                          // Agréger les données par médecin, client et produit
+                          for (const g of filtered) {
+                            if (!g.medcienId) continue;
+                            
+                            const medecin = medecins.find(m => String(m.id) === String(g.medcienId));
+                            if (!medecin) continue;
+                            
+                            const client = clients.find(c => String(c.id) === String(g.clientId));
+                            const produit = produits.find(p => String(p.id) === String(g.produitId));
+                            
+                            // Ne garder que ACTE MEDECIN et TAM
+                            if (!produit || (produit.name !== 'ACTE MEDECIN' && produit.name !== 'TAM')) continue;
+                            
+                            const medecinName = medecin.name || `${medecin.nom || ''} ${medecin.prenom || ''}`.trim();
+                            const clientName = client ? client.clientFullName : 'Client inconnu';
+                            const key = `${medecinName}|${clientName}`;
+                            
+                            if (!medecinClientData[key]) {
+                              medecinClientData[key] = {
+                                medecinName,
+                                clientName,
+                                acteMedecinCA: 0,
+                                acteMedecinCount: 0,
+                                tamCA: 0,
+                                tamCount: 0,
+                                totalCA: 0,
+                                totalCount: 0
+                              };
+                            }
+                            
+                            const caTTC = Number(g.caTTC) || 0;
+                            
+                            if (produit.name === 'ACTE MEDECIN') {
+                              medecinClientData[key].acteMedecinCA += caTTC;
+                              medecinClientData[key].acteMedecinCount += 1;
+                            } else if (produit.name === 'TAM') {
+                              medecinClientData[key].tamCA += caTTC;
+                              medecinClientData[key].tamCount += 1;
+                            }
+                            
+                            medecinClientData[key].totalCA += caTTC;
+                            medecinClientData[key].totalCount += 1;
+                          }
+                          
+                          // Calculer les totaux généraux
+                          const grandTotals = {
+                            acteMedecinCA: 0,
+                            acteMedecinCount: 0,
+                            tamCA: 0,
+                            tamCount: 0,
+                            totalCA: 0,
+                            totalCount: 0
+                          };
+                          
+                          Object.values(medecinClientData).forEach(data => {
+                            grandTotals.acteMedecinCA += data.acteMedecinCA;
+                            grandTotals.acteMedecinCount += data.acteMedecinCount;
+                            grandTotals.tamCA += data.tamCA;
+                            grandTotals.tamCount += data.tamCount;
+                            grandTotals.totalCA += data.totalCA;
+                            grandTotals.totalCount += data.totalCount;
+                          });
+                          
+                          // Trier par CA total décroissant
+                          const sortedEntries = Object.values(medecinClientData)
+                            .sort((a, b) => b.totalCA - a.totalCA);
+                          
+                          return [
+                            // Lignes des médecins
+                            ...sortedEntries.map((data, index) => (
+                              <tr key={`${data.medecinName}-${data.clientName}`}>
+                                <td style={{ fontSize: '0.9rem' }}>{data.medecinName}</td>
+                                <td style={{ fontSize: '0.9rem' }}>{data.clientName}</td>
+                                <td className="num" style={{ fontSize: '0.9rem' }}>
+                                  {data.acteMedecinCA > 0 ? Number(data.acteMedecinCA).toLocaleString('fr-FR') + ' DH' : '-'}
+                                </td>
+                                <td className="num" style={{ fontSize: '0.9rem' }}>
+                                  {data.acteMedecinCount > 0 ? data.acteMedecinCount : '-'}
+                                </td>
+                                <td className="num" style={{ fontSize: '0.9rem' }}>
+                                  {data.tamCA > 0 ? Number(data.tamCA).toLocaleString('fr-FR') + ' DH' : '-'}
+                                </td>
+                                <td className="num" style={{ fontSize: '0.9rem' }}>
+                                  {data.tamCount > 0 ? data.tamCount : '-'}
+                                </td>
+                                <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                  {Number(data.totalCA).toLocaleString('fr-FR')} DH
+                                </td>
+                                <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                  {data.totalCount}
+                                </td>
+                              </tr>
+                            )),
+                            // Ligne de total
+                            <tr key="grand-total" style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold', borderTop: '2px solid #dee2e6' }}>
+                              <td style={{ fontSize: '0.9rem', fontWeight: 'bold' }} colSpan="2">Grand total</td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                {Number(grandTotals.acteMedecinCA).toLocaleString('fr-FR')} DH
+                              </td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                {grandTotals.acteMedecinCount}
+                              </td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                {Number(grandTotals.tamCA).toLocaleString('fr-FR')} DH
+                              </td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+                                {grandTotals.tamCount}
+                              </td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1976d2' }}>
+                                {Number(grandTotals.totalCA).toLocaleString('fr-FR')} DH
+                              </td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1976d2' }}>
+                                {grandTotals.totalCount}
+                              </td>
+                            </tr>
+                          ];
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '600px',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}>
+                    {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+                  </div>
+                )}
+              </div>
+
+              {/* Graphique en barres - Résumé CA par Médecin */}
+              <div className="graph-block">
+                <h4>Résumé CA par Médecin (ACTE MEDECIN + TAM)</h4>
+                {!loading && filtered.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart
+                      data={(() => {
+                        const medecinSummary = {};
+                        
+                        // Agréger les données par médecin pour ACTE MEDECIN et TAM uniquement
+                        for (const g of filtered) {
+                          if (!g.medcienId) continue;
+                          
+                          const medecin = medecins.find(m => String(m.id) === String(g.medcienId));
+                          const produit = produits.find(p => String(p.id) === String(g.produitId));
+                          
+                          if (!medecin || !produit || (produit.name !== 'ACTE MEDECIN' && produit.name !== 'TAM')) continue;
+                          
+                          const medecinName = medecin.name || `${medecin.nom || ''} ${medecin.prenom || ''}`.trim();
+                          
+                          if (!medecinSummary[medecinName]) {
+                            medecinSummary[medecinName] = {
+                              name: medecinName,
+                              'ACTE MEDECIN': 0,
+                              'TAM': 0
+                            };
+                          }
+                          
+                          const caTTC = Number(g.caTTC) || 0;
+                          medecinSummary[medecinName][produit.name] += caTTC;
+                        }
+                        
+                        // Trier par CA total décroissant
+                        return Object.values(medecinSummary)
+                          .sort((a, b) => (b['ACTE MEDECIN'] + b['TAM']) - (a['ACTE MEDECIN'] + a['TAM']))
+                          .slice(0, 10); // Limiter aux 10 premiers pour la lisibilité
+                      })()}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={80}
+                        interval={0}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => value.toLocaleString('fr-FR')}
+                        label={{ value: '', angle: -90, position: 'insideLeft' }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${Number(value).toLocaleString('fr-FR')} DH`,
+                          name
+                        ]}
+                        labelFormatter={(label) => `Médecin: ${label}`}
+                      />
+                      <Legend />
+                      <Bar dataKey="ACTE MEDECIN" stackId="a" fill="#4fc3f7" name="ACTE MEDECIN" />
+                      <Bar dataKey="TAM" stackId="a" fill="#81c784" name="TAM" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '400px',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}>
+                    {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : activeTab === 'ca-infirmier' ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {/* Graphique en barres - CA / Infirmier */}
+              <div className="graph-block">
+                <h4>CA / Infirmier</h4>
+                {!loading && filtered.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart
+                      data={(() => {
+                        const infirmierData = {};
+                        
+                        // Agréger les données par infirmier
+                        for (const g of filtered) {
+                          if (!g.infermierId) continue;
+                          
+                          const infirmier = infirmiers.find(i => String(i.id) === String(g.infermierId));
+                          if (!infirmier) continue;
+                          
+                          const infirmierName = infirmier.nom || `${infirmier.nom || ''} ${infirmier.prenom || ''}`.trim();
+                          
+                          if (!infirmierData[infirmierName]) {
+                            infirmierData[infirmierName] = 0;
+                          }
+                          
+                          const caTTC = Number(g.caTTC) || 0;
+                          infirmierData[infirmierName] += caTTC;
+                        }
+                        
+                        // Trier par CA décroissant
+                        return Object.entries(infirmierData)
+                          .sort(([,a], [,b]) => b - a)
+                          .map(([name, value]) => ({
+                            name,
+                            value
+                          }));
+                      })()}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="name" 
+                        angle={-45} 
+                        textAnchor="end" 
+                        height={80}
+                        interval={0}
+                        tick={{ fontSize: 11 }}
+                      />
+                      <YAxis 
+                        tickFormatter={(value) => value.toLocaleString('fr-FR')}
+                        label={{ value: '', angle: -90, position: 'insideLeft' }}
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          `${Number(value).toLocaleString('fr-FR')} DH`,
+                          'CA TTC'
+                        ]}
+                        labelFormatter={(label) => `Infirmier: ${label}`}
+                      />
+                      <Bar dataKey="value" fill="#ab47bc" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '400px',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}>
+                    {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+                  </div>
+                )}
+              </div>
+
+              {/* Tableau - CA / Infirmier */}
+              <div className="graph-block">
+                <h4>CA / Infirmier - Tableau</h4>
+                {!loading && filtered.length > 0 ? (
+                  <div style={{ overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
+                    <table className="simple-table">
+                      <thead>
+                        <tr>
+                          <th className="rank">#</th>
+                          <th>Infirmier</th>
+                          <th className="num">CA TTC</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const infirmierData = {};
+                          
+                          // Agréger les données par infirmier
+                          for (const g of filtered) {
+                            if (!g.infermierId) continue;
+                            
+                            const infirmier = infirmiers.find(i => String(i.id) === String(g.infermierId));
+                            if (!infirmier) continue;
+                            
+                            const infirmierName = infirmier.nom || `${infirmier.nom || ''} ${infirmier.prenom || ''}`.trim();
+                            
+                            if (!infirmierData[infirmierName]) {
+                              infirmierData[infirmierName] = 0;
+                            }
+                            
+                            const caTTC = Number(g.caTTC) || 0;
+                            infirmierData[infirmierName] += caTTC;
+                          }
+                          
+                          // Calculer le total général
+                          const grandTotal = Object.values(infirmierData).reduce((sum, value) => sum + value, 0);
+                          
+                          // Trier par CA décroissant et ajouter la ligne de total
+                          const sortedEntries = Object.entries(infirmierData)
+                            .sort(([,a], [,b]) => b - a);
+                          
+                          return [
+                            // Lignes des infirmiers
+                            ...sortedEntries.map(([infirmierName, caTTC], index) => (
+                              <tr key={infirmierName}>
+                                <td className="rank">{index + 1}</td>
+                                <td style={{ fontSize: '0.9rem' }}>{infirmierName}</td>
+                                <td className="num" style={{ fontSize: '0.9rem' }}>{Number(caTTC).toLocaleString('fr-FR')} DH</td>
+                              </tr>
+                            )),
+                            // Ligne de total
+                            <tr key="grand-total" style={{ backgroundColor: '#f8f9fa', fontWeight: 'bold', borderTop: '2px solid #dee2e6' }}>
+                              <td className="rank" style={{ fontWeight: 'bold' }}>-</td>
+                              <td style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>Grand total</td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#1976d2' }}>{Number(grandTotal).toLocaleString('fr-FR')} DH</td>
+                            </tr>
+                          ];
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
                 ) : (
                   <div style={{ 
                     display: 'flex', 

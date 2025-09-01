@@ -11,3 +11,407 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* ===== STYLES RESPONSIFS GLOBAUX ===== */
+
+/* Reset et base responsive */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Variables CSS pour les breakpoints */
+:root {
+  --mobile-small: 360px;
+  --mobile-medium: 480px;
+  --mobile-large: 600px;
+  --tablet-small: 768px;
+  --tablet-medium: 900px;
+  --tablet-large: 1024px;
+  --desktop: 1200px;
+}
+
+/* Styles de base pour tous les écrans */
+body {
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Gestion des images responsives */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Gestion des tableaux responsifs */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Gestion des formulaires responsifs */
+input, select, textarea, button {
+  font-size: 1rem;
+  max-width: 100%;
+}
+
+/* Gestion des conteneurs */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Utilitaires responsifs */
+.hidden-mobile {
+  display: block;
+}
+
+.hidden-tablet {
+  display: block;
+}
+
+.hidden-desktop {
+  display: none;
+}
+
+.visible-mobile {
+  display: none;
+}
+
+.visible-tablet {
+  display: none;
+}
+
+.visible-desktop {
+  display: block;
+}
+
+/* Breakpoint Mobile Small (≤360px) */
+@media (max-width: 360px) {
+  html {
+    font-size: 14px;
+  }
+  
+  .container {
+    padding: 0 0.5rem;
+  }
+  
+  .hidden-mobile {
+    display: none;
+  }
+  
+  .visible-mobile {
+    display: block;
+  }
+}
+
+/* Breakpoint Mobile Medium (≤480px) */
+@media (max-width: 480px) {
+  html {
+    font-size: 15px;
+  }
+  
+  .container {
+    padding: 0 0.75rem;
+  }
+  
+  .hidden-mobile {
+    display: none;
+  }
+  
+  .visible-mobile {
+    display: block;
+  }
+}
+
+/* Breakpoint Mobile Large (≤600px) */
+@media (max-width: 600px) {
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .hidden-mobile {
+    display: none;
+  }
+  
+  .visible-mobile {
+    display: block;
+  }
+}
+
+/* Breakpoint Tablet Small (≤768px) */
+@media (max-width: 768px) {
+  .hidden-tablet {
+    display: none;
+  }
+  
+  .visible-tablet {
+    display: block;
+  }
+  
+  .hidden-mobile {
+    display: none;
+  }
+  
+  .visible-mobile {
+    display: block;
+  }
+}
+
+/* Breakpoint Tablet Medium (≤900px) */
+@media (max-width: 900px) {
+  .container {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+  
+  .hidden-tablet {
+    display: none;
+  }
+  
+  .visible-tablet {
+    display: block;
+  }
+}
+
+/* Breakpoint Tablet Large (≤1024px) */
+@media (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding: 0 1.5rem;
+  }
+}
+
+/* Breakpoint Desktop (≤1200px) */
+@media (max-width: 1200px) {
+  .container {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+}
+
+/* Orientation paysage sur mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  html {
+    font-size: 14px;
+  }
+  
+  .container {
+    padding: 0 0.5rem;
+  }
+}
+
+/* Support des écrans haute résolution */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Support du mode sombre système */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --text-primary: #ffffff;
+    --border-color: #555;
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+  }
+}
+
+/* Amélioration de l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Support des écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+  button, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Gestion des focus pour l'accessibilité */
+*:focus {
+  outline: 2px solid #1976d2;
+  outline-offset: 2px;
+}
+
+/* Gestion des erreurs de validation */
+.error {
+  color: #d32f2f;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Gestion des succès */
+.success {
+  color: #2e7d32;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Gestion des avertissements */
+.warning {
+  color: #ed6c02;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Gestion des informations */
+.info {
+  color: #0288d1;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Utilitaires d'espacement responsifs */
+.m-0 { margin: 0; }
+.m-1 { margin: 0.25rem; }
+.m-2 { margin: 0.5rem; }
+.m-3 { margin: 1rem; }
+.m-4 { margin: 1.5rem; }
+.m-5 { margin: 3rem; }
+
+.p-0 { padding: 0; }
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+.p-5 { padding: 3rem; }
+
+/* Responsive spacing */
+@media (max-width: 768px) {
+  .m-5 { margin: 1.5rem; }
+  .p-5 { padding: 1.5rem; }
+}
+
+@media (max-width: 480px) {
+  .m-4 { margin: 1rem; }
+  .m-5 { margin: 1rem; }
+  .p-4 { padding: 1rem; }
+  .p-5 { padding: 1rem; }
+}
+
+/* Gestion des grilles responsives */
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid-1 { grid-template-columns: 1fr; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 1024px) {
+  .grid-4 { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+/* Gestion de la flexibilité */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+/* Responsive flex */
+@media (max-width: 768px) {
+  .flex {
+    flex-direction: column;
+  }
+  
+  .flex-row-mobile {
+    flex-direction: row;
+  }
+}
+
+/* Gestion du texte responsive */
+.text-xs { font-size: 0.75rem; }
+.text-sm { font-size: 0.875rem; }
+.text-base { font-size: 1rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+
+@media (max-width: 768px) {
+  .text-2xl { font-size: 1.25rem; }
+  .text-xl { font-size: 1.125rem; }
+}
+
+@media (max-width: 480px) {
+  .text-lg { font-size: 1rem; }
+  .text-xl { font-size: 1rem; }
+  .text-2xl { font-size: 1.125rem; }
+}
+
+/* Gestion de la visibilité responsive */
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+  
+  .visible-mobile {
+    display: block !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .visible-mobile {
+    display: none !important;
+  }
+  
+  .hidden-mobile {
+    display: block !important;
+  }
+}
