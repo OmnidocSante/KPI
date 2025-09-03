@@ -2293,6 +2293,140 @@ const Data = () => {
                   </div>
                 )}
               </div>
+
+              {/* Nouveau graphique - CA Assurance / Client / Mois */}
+              <div className="graph-block">
+                <h4>CA Assurance / Client / Mois</h4>
+                {!loading && filtered.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart
+                      data={(() => {
+                        const clientMoisData = {};
+                        
+                        // Agréger les données par client et mois (uniquement pour Assurance)
+                        for (const g of filtered) {
+                          if (!g.clientId || !g.businessUnitId) continue;
+                          
+                          // Vérifier que c'est bien une assurance
+                          const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
+                          if (!bu || bu.businessUnitType !== 'Assurance') continue;
+                          
+                          const client = clients.find(c => String(c.id) === String(g.clientId));
+                          if (!client) continue;
+                          
+                          // Extraire le mois de la date de création
+                          const dateCreation = new Date(g.dateCreation);
+                          const ym = dateCreation.toISOString().slice(0, 7); // Format YYYY-MM
+                          
+                          const clientName = client.clientFullName;
+                          
+                          if (!clientMoisData[ym]) clientMoisData[ym] = {};
+                          clientMoisData[ym][clientName] = (clientMoisData[ym][clientName] || 0) + (Number(g.caTTC) || 0);
+                        }
+                        
+                        // Trier par mois et limiter aux 5 premiers clients pour la lisibilité
+                        const sortedMonths = Object.keys(clientMoisData).sort();
+                        const topClients = Object.keys(
+                          Object.values(clientMoisData).reduce((acc, monthData) => {
+                            Object.entries(monthData).forEach(([client, value]) => {
+                              acc[client] = (acc[client] || 0) + value;
+                            });
+                            return acc;
+                          }, {})
+                        )
+                        .sort((a, b) => {
+                          const totalA = Object.values(clientMoisData).reduce((sum, monthData) => sum + (monthData[a] || 0), 0);
+                          const totalB = Object.values(clientMoisData).reduce((sum, monthData) => sum + (monthData[b] || 0), 0);
+                          return totalB - totalA;
+                        })
+                        .slice(0, 5);
+                        
+                        return sortedMonths.map(month => ({
+                          month,
+                          ...topClients.reduce((acc, client) => {
+                            acc[client] = clientMoisData[month][client] || 0;
+                            return acc;
+                          }, {})
+                        }));
+                      })()}
+                      margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis 
+                        dataKey="month" 
+                        tickFormatter={(m) => new Date(m + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} 
+                        interval={0} 
+                        angle={-30} 
+                        textAnchor="end" 
+                        height={60} 
+                      />
+                      <YAxis tickFormatter={(v) => v.toLocaleString('fr-FR')} />
+                      <Tooltip 
+                        labelFormatter={(m) => new Date(m + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} 
+                        formatter={(v, name) => [Number(v).toLocaleString('fr-FR'), name]} 
+                      />
+                      <Legend />
+                      {(() => {
+                        // Recréer les données pour obtenir les noms des clients
+                        const clientMoisData = {};
+                        for (const g of filtered) {
+                          if (!g.clientId || !g.businessUnitId) continue;
+                          const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
+                          if (!bu || bu.businessUnitType !== 'Assurance') continue;
+                          const client = clients.find(c => String(c.id) === String(g.clientId));
+                          if (!client) continue;
+                          const dateCreation = new Date(g.dateCreation);
+                          const ym = dateCreation.toISOString().slice(0, 7);
+                          const clientName = client.clientFullName;
+                          if (!clientMoisData[ym]) clientMoisData[ym] = {};
+                          clientMoisData[ym][clientName] = (clientMoisData[ym][clientName] || 0) + (Number(g.caTTC) || 0);
+                        }
+                        
+                        const clientNames = Object.keys(
+                          Object.values(clientMoisData).reduce((acc, monthData) => {
+                            Object.entries(monthData).forEach(([client, value]) => {
+                              acc[client] = (acc[client] || 0) + value;
+                            });
+                            return acc;
+                          }, {})
+                        )
+                        .sort((a, b) => {
+                          const totalA = Object.values(clientMoisData).reduce((sum, monthData) => sum + (monthData[a] || 0), 0);
+                          const totalB = Object.values(clientMoisData).reduce((sum, monthData) => sum + (monthData[b] || 0), 0);
+                          return totalB - totalA;
+                        })
+                        .slice(0, 5);
+                        
+                        const colors = ['#8884d8', '#ff7300', '#ffc658', '#82ca9d', '#ff8042'];
+                        
+                        return clientNames.map((clientName, index) => (
+                          <Line 
+                            key={clientName}
+                            type="monotone" 
+                            dataKey={clientName} 
+                            name={clientName} 
+                            stroke={colors[index % colors.length]} 
+                            strokeWidth={3} 
+                            dot={{ r: 4 }} 
+                            activeDot={{ r: 6 }} 
+                          />
+                        ));
+                      })()}
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '300px',
+                    color: '#666',
+                    fontSize: '1.1rem'
+                  }}>
+                    {loading ? 'Chargement...' : 'Aucune donnée disponible'}
+                  </div>
+                )}
+              </div>
             </div>
           ) : activeTab === 'ca-bu-btob' ? (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
