@@ -194,30 +194,32 @@ const Data = () => {
     fetchData();
   }, []);
 
-  // Application des filtres (par onglet)
-  const filtered = globales.filter(g => {
-    const dateValue = g.dateCreation ? String(g.dateCreation).slice(0, 10) : null; // YYYY-MM-DD
-    if (currentFilters.start && dateValue && dateValue < currentFilters.start) return false;
-    if (currentFilters.end && dateValue && dateValue > currentFilters.end) return false;
-    if (currentFilters.villes.length > 0 && !currentFilters.villes.includes(String(g.villeId))) return false;
-    if (currentFilters.bu.length > 0 && !currentFilters.bu.includes(String(g.businessUnitId))) return false;
-    if (currentFilters.clients.length > 0 && !currentFilters.clients.includes(String(g.clientId))) return false;
-    if (currentFilters.produits.length > 0 && !currentFilters.produits.includes(String(g.produitId))) return false;
-    if (currentFilters.etats.length > 0 && !currentFilters.etats.includes(String(g.etatdePaiment))) return false;
-    if (currentFilters.ambulances.length > 0 && !currentFilters.ambulances.includes(String(g.aumbulanceId))) return false;
-    if (currentFilters.statuts && currentFilters.statuts.length > 0 && !currentFilters.statuts.includes(String(g.statutMission))) return false;
-    if (currentFilters.typeMissions && currentFilters.typeMissions.length > 0 && !currentFilters.typeMissions.includes(String(g.typeMission))) return false;
-    if (currentFilters.zoneGeos && currentFilters.zoneGeos.length > 0 && !currentFilters.zoneGeos.includes(String(g.zoneGeographique))) return false;
-    if (currentFilters.medecins && currentFilters.medecins.length > 0 && !currentFilters.medecins.includes(String(g.medcienId))) return false;
-    if (currentFilters.infirmiers && currentFilters.infirmiers.length > 0 && !currentFilters.infirmiers.includes(String(g.infermierId))) return false;
-    return true;
-  });
+  // Application des filtres (par onglet) - Mémoisé pour éviter les recalculs
+  const filtered = React.useMemo(() => {
+    return globales.filter(g => {
+      const dateValue = g.dateCreation ? String(g.dateCreation).slice(0, 10) : null; // YYYY-MM-DD
+      if (currentFilters.start && dateValue && dateValue < currentFilters.start) return false;
+      if (currentFilters.end && dateValue && dateValue > currentFilters.end) return false;
+      if (currentFilters.villes.length > 0 && !currentFilters.villes.includes(String(g.villeId))) return false;
+      if (currentFilters.bu.length > 0 && !currentFilters.bu.includes(String(g.businessUnitId))) return false;
+      if (currentFilters.clients.length > 0 && !currentFilters.clients.includes(String(g.clientId))) return false;
+      if (currentFilters.produits.length > 0 && !currentFilters.produits.includes(String(g.produitId))) return false;
+      if (currentFilters.etats.length > 0 && !currentFilters.etats.includes(String(g.etatdePaiment))) return false;
+      if (currentFilters.ambulances.length > 0 && !currentFilters.ambulances.includes(String(g.aumbulanceId))) return false;
+      if (currentFilters.statuts && currentFilters.statuts.length > 0 && !currentFilters.statuts.includes(String(g.statutMission))) return false;
+      if (currentFilters.typeMissions && currentFilters.typeMissions.length > 0 && !currentFilters.typeMissions.includes(String(g.typeMission))) return false;
+      if (currentFilters.zoneGeos && currentFilters.zoneGeos.length > 0 && !currentFilters.zoneGeos.includes(String(g.zoneGeographique))) return false;
+      if (currentFilters.medecins && currentFilters.medecins.length > 0 && !currentFilters.medecins.includes(String(g.medcienId))) return false;
+      if (currentFilters.infirmiers && currentFilters.infirmiers.length > 0 && !currentFilters.infirmiers.includes(String(g.infermierId))) return false;
+      return true;
+    });
+  }, [globales, currentFilters]);
 
-  // Debug: afficher les informations de filtrage
-  console.log('Filtres actifs:', currentFilters);
-  console.log('Données totales:', globales.length);
-  console.log('Données filtrées:', filtered.length);
-  console.log('Onglet actif:', activeTab);
+  // Debug: afficher les informations de filtrage (désactivé en production)
+  // console.log('Filtres actifs:', currentFilters);
+  // console.log('Données totales:', globales.length);
+  // console.log('Données filtrées:', filtered.length);
+  // console.log('Onglet actif:', activeTab);
 
   // Mettre à jour le contenu central du donut chart quand les filtres changent
   useEffect(() => {
@@ -328,13 +330,13 @@ const Data = () => {
         </tspan>
       `;
     }
-  }, [filtered, activeTab, currentFilters, loading, businessUnits, produits]);
+  }, [activeTab, loading]);
 
   // KPIs supprimés (placeholder pour futur besoin)
 
   // Tous les calculs de graphes retirés; ils seront définis par onglet plus tard
-  // Données Ambulances (CA TTC et Nombre de missions)
-  const ambulanceAgg = (() => {
+  // Données Ambulances (CA TTC et Nombre de missions) - Mémoisé
+  const ambulanceAgg = React.useMemo(() => {
     if (activeTab !== 'ambulances') return { caByAmbulance: [], countByAmbulance: [] };
     const map = new Map();
     for (const g of filtered) {
@@ -356,7 +358,7 @@ const Data = () => {
       countByAmbulance.push({ name, value: vals.count });
     }
     return { caByAmbulance, countByAmbulance };
-  })();
+  }, [activeTab, filtered, ambulances]);
 
   // Pré-agrégations CA Global par mois (pour onglet ca-global)
   const caGlobalByMonth = React.useMemo(() => {
@@ -1026,6 +1028,9 @@ const Data = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="graph-block" style={{ padding: '1rem', background: '#fff', borderRadius: 8 }}>
                 <h4>CA / Ambulance</h4>
+                <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
+                  <strong>Total CA: {ambulanceAgg.caByAmbulance.reduce((sum, item) => sum + item.value, 0).toLocaleString('fr-FR')} DH</strong>
+                </div>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={ambulanceAgg.caByAmbulance}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -1051,6 +1056,9 @@ const Data = () => {
               {/* Tableaux correspondants */}
               <div className="graph-block" style={{ padding: '1rem', background: '#fff', borderRadius: 8 }}>
                 <h4>Tableau - CA / Ambulance</h4>
+                <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
+                  <strong>Total CA: {ambulanceAgg.caByAmbulance.reduce((sum, item) => sum + item.value, 0).toLocaleString('fr-FR')} DH</strong>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                   <table className="simple-table">
                     <thead>
@@ -2081,6 +2089,7 @@ const Data = () => {
                           <th className="num">TAS</th>
                           <th className="num">VSL</th>
                           <th className="num">Chèque de caution</th>
+                          <th className="num">Total</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2162,6 +2171,7 @@ const Data = () => {
                                 <td className="num" style={{ fontSize: '0.9rem' }}>{data['TAS'] > 0 ? Number(data['TAS']).toLocaleString('fr-FR') : ''}</td>
                                 <td className="num" style={{ fontSize: '0.9rem' }}>{data['VSL'] > 0 ? Number(data['VSL']).toLocaleString('fr-FR') : ''}</td>
                                 <td className="num" style={{ fontSize: '0.9rem' }}>{data['Chèque de caution'] > 0 ? Number(data['Chèque de caution']).toLocaleString('fr-FR') : ''}</td>
+                                <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{Number(data.total).toLocaleString('fr-FR')}</td>
                               </tr>
                             )),
                             // Ligne de total
@@ -2175,6 +2185,7 @@ const Data = () => {
                               <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{Number(grandTotal['TAS']).toLocaleString('fr-FR')}</td>
                               <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{Number(grandTotal['VSL']).toLocaleString('fr-FR')}</td>
                               <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{Number(grandTotal['Chèque de caution']).toLocaleString('fr-FR')}</td>
+                              <td className="num" style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{Number(grandTotal.total).toLocaleString('fr-FR')}</td>
                             </tr>
                           ];
                         })()}
@@ -3583,10 +3594,10 @@ const Data = () => {
                       data={(() => {
                         const monthlyMargeData = {};
                         
-                        // Debug: afficher les données disponibles
-                        console.log('Données filtrées pour Marge B2B:', filtered);
-                        console.log('Clients disponibles:', clients.map(c => ({ id: c.id, name: c.clientFullName })));
-                        console.log('Structure des données globales:', filtered.length > 0 ? Object.keys(filtered[0]) : 'Aucune donnée');
+                        // Debug: afficher les données disponibles (désactivé en production)
+                        // console.log('Données filtrées pour Marge B2B:', filtered);
+                        // console.log('Clients disponibles:', clients.map(c => ({ id: c.id, name: c.clientFullName })));
+                        // console.log('Structure des données globales:', filtered.length > 0 ? Object.keys(filtered[0]) : 'Aucune donnée');
                         
                         // Agréger les données par mois pour Tgcc
                         for (const g of filtered) {
@@ -3594,7 +3605,7 @@ const Data = () => {
                           
                           // Vérifier que c'est bien Tgcc
                           const client = clients.find(c => String(c.id) === String(g.clientId));
-                          console.log('Client trouvé:', client);
+                          // console.log('Client trouvé:', client);
                           if (!client || client.clientFullName !== 'Tgcc') continue;
                           
                           const date = new Date(g.dateCreation);
@@ -3679,9 +3690,9 @@ const Data = () => {
                       data={(() => {
                         const monthlyMargeData = {};
                         
-                        // Debug: afficher les données disponibles
-                        console.log('Données filtrées pour Groupe honoris:', filtered);
-                        console.log('Clients disponibles pour Groupe honoris:', clients.map(c => ({ id: c.id, name: c.clientFullName })));
+                        // Debug: afficher les données disponibles (désactivé en production)
+                        // console.log('Données filtrées pour Groupe honoris:', filtered);
+                        // console.log('Clients disponibles pour Groupe honoris:', clients.map(c => ({ id: c.id, name: c.clientFullName })));
                         
                         // Agréger les données par mois pour Groupe honoris
                         for (const g of filtered) {
@@ -3689,7 +3700,7 @@ const Data = () => {
                           
                           // Vérifier que c'est bien Groupe honoris
                           const client = clients.find(c => String(c.id) === String(g.clientId));
-                          console.log('Client Groupe honoris trouvé:', client);
+                          // console.log('Client Groupe honoris trouvé:', client);
                           if (!client || client.clientFullName !== 'Groupe honoris') continue;
                           
                           const date = new Date(g.dateCreation);
