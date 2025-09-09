@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import api from '../services/api';
 import Sidebar from '../components/Sidebar';
 import './Data.css';
@@ -14,7 +14,7 @@ const TABS = [
   { key: 'ca-bu-assurance', label: 'CA BU / ASSURANCE' },
   { key: 'ca-bu-btob', label: 'CA BU / BTOB' },
   { key: 'ca-bu-btoc', label: 'CA / BU / BTOC' },
-  { key: 'ca-assurance-wafa-ima', label: 'CA ASSURANCE / WAFA IMA' },
+  { key: 'ca-assurance-wafa-ima', label: 'CA WAFA IMA' },
   { key: 'ca-mai', label: 'CA MAI' },
   { key: 'ca-afa', label: 'CA AFA' },
   { key: 'marge-b2b', label: 'Marge B2B' },
@@ -90,10 +90,131 @@ const mobileStyle = `
   .kpi-card, .graph-block { min-width: 90vw !important; max-width: 100vw !important; margin: 0.5rem auto !important; }
   .main-responsive { padding: 0.5rem !important; }
 }
+
+/* Styles pour les onglets responsives */
+.tabs-container {
+  /* Reset des styles par défaut */
+  all: unset;
+  display: flex !important;
+  gap: 8px;
+  margin: 0 0 1rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabs-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 2px;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 2px;
+}
+
+.tabs-container::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Styles spécifiques pour les boutons d'onglets */
+.tabs-container button {
+  /* Reset des styles par défaut */
+  all: unset;
+  padding: 10px 14px !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  min-width: fit-content !important;
+  width: auto !important;
+  font-size: clamp(0.75rem, 1.5vw, 0.9rem) !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+/* États des onglets */
+.tabs-container button[style*="border-bottom: 3px solid #1976d2"] {
+  color: #111827 !important;
+}
+
+.tabs-container button[style*="border-bottom: 3px solid transparent"] {
+  color: #6b7280 !important;
+}
+
+@media (max-width: 768px) {
+  .tabs-container {
+    padding-bottom: 4px;
+  }
+  
+  .tabs-container button {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    min-width: fit-content !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs-container button {
+    padding: 6px 8px !important;
+    font-size: 0.7rem !important;
+    min-width: fit-content !important;
+  }
+}
+
+/* Optimisations supplémentaires pour très petits écrans */
+@media (max-width: 360px) {
+  .tabs-container button {
+    padding: 4px 6px !important;
+    font-size: 0.65rem !important;
+  }
+  
+  .data-title {
+    font-size: 1.3rem;
+  }
+  
+  .data-filters {
+    padding: 0.5rem;
+  }
+  
+  .graph-block {
+    padding: 0.5rem 0.3rem;
+  }
+}
+
+/* Forcer les conteneurs de graphiques à une colonne sur mobile */
+@media (max-width: 480px) {
+  .mobile-single-column {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+  
+  .mobile-single-column > div {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
 `;
 
 function formatDate(date) {
   return date.toISOString().split('T')[0];
+}
+
+// Fonction pour obtenir la hauteur responsive des graphiques
+function getResponsiveHeight(windowWidth = 1024) {
+  if (windowWidth <= 480) return 300;
+  if (windowWidth <= 768) return 350;
+  return 400;
 }
 
 // Fonction utilitaire pour calculer le pourcentage
@@ -111,6 +232,7 @@ const Data = () => {
   const [ambulances, setAmbulances] = useState([]);
   const [medecins, setMedecins] = useState([]);
   const [infirmiers, setInfirmiers] = useState([]);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   // Onglet actif
   const [activeTab, setActiveTab] = useState('ambulances');
@@ -129,6 +251,38 @@ const Data = () => {
   };
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchTerms, setSearchTerms] = useState({});
+
+  // OPTIMISATION 1: Créer des Maps pour les recherches rapides
+  const businessUnitsMap = useMemo(() => {
+    return new Map(businessUnits.map(bu => [String(bu.id), bu]));
+  }, [businessUnits]);
+
+  const produitsMap = useMemo(() => {
+    return new Map(produits.map(p => [String(p.id), p]));
+  }, [produits]);
+
+  const villesMap = useMemo(() => {
+    return new Map(villes.map(v => [String(v.id), v]));
+  }, [villes]);
+
+  const clientsMap = useMemo(() => {
+    return new Map(clients.map(c => [String(c.id), c]));
+  }, [clients]);
+
+  const ambulancesMap = useMemo(() => {
+    return new Map(ambulances.map(a => [String(a.id), a]));
+  }, [ambulances]);
+
+  const medecinsMap = useMemo(() => {
+    return new Map(medecins.map(m => [String(m.id), m]));
+  }, [medecins]);
+
+  const infirmiersMap = useMemo(() => {
+    return new Map(infirmiers.map(i => [String(i.id), i]));
+  }, [infirmiers]);
+
+  // OPTIMISATION 2: Traitement efficace de tous les éléments (pas de pagination)
+  // Utiliser filtered directement pour tous les calculs
 
   // Fonction pour ouvrir/fermer un dropdown et nettoyer la recherche
   const toggleDropdown = (dropdownName) => {
@@ -163,6 +317,16 @@ const Data = () => {
       setState([...currentState, value]);
     }
   };
+
+  // Hook pour détecter les changements de taille d'écran
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -215,6 +379,108 @@ const Data = () => {
     });
   }, [globales, currentFilters]);
 
+  // OPTIMISATION 2: Traitement efficace de tous les éléments (pas de pagination)
+  // Utiliser filtered directement pour tous les calculs
+
+  // OPTIMISATION 3: Debouncing des filtres pour éviter les calculs excessifs
+  const [debouncedFilters, setDebouncedFilters] = useState(currentFilters);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedFilters(currentFilters);
+    }, 300); // 300ms de délai
+    
+    return () => clearTimeout(timer);
+  }, [currentFilters]);
+
+  // OPTIMISATION 4: Fonctions mémoisées pour les événements de graphiques
+  const formatValue = useCallback((value) => {
+    if (value >= 1000000) {
+      return `${(value / 1000000).toFixed(1)}M`;
+    } else if (value >= 1000) {
+      return `${(value / 1000).toFixed(0)}k`;
+    }
+    return value.toLocaleString('fr-FR');
+  }, []);
+
+  // OPTIMISATION 5: Pré-calcul des agrégations pour éviter les recalculs
+  const precomputedAggregations = useMemo(() => {
+    const aggregations = {
+      byBusinessUnit: new Map(),
+      byProduit: new Map(),
+      byVille: new Map(),
+      byClient: new Map(),
+      byAmbulance: new Map(),
+      byMedecin: new Map(),
+      byInfirmier: new Map(),
+      byMonth: new Map(),
+      totalCA: 0
+    };
+
+    for (const g of filtered) {
+      const caTTC = Number(g.caTTC) || 0;
+      aggregations.totalCA += caTTC;
+
+      // Agrégation par Business Unit
+      if (g.businessUnitId) {
+        const buId = String(g.businessUnitId);
+        const current = aggregations.byBusinessUnit.get(buId) || 0;
+        aggregations.byBusinessUnit.set(buId, current + caTTC);
+      }
+
+      // Agrégation par Produit
+      if (g.produitId) {
+        const produitId = String(g.produitId);
+        const current = aggregations.byProduit.get(produitId) || 0;
+        aggregations.byProduit.set(produitId, current + caTTC);
+      }
+
+      // Agrégation par Ville
+      if (g.villeId) {
+        const villeId = String(g.villeId);
+        const current = aggregations.byVille.get(villeId) || 0;
+        aggregations.byVille.set(villeId, current + caTTC);
+      }
+
+      // Agrégation par Client
+      if (g.clientId) {
+        const clientId = String(g.clientId);
+        const current = aggregations.byClient.get(clientId) || 0;
+        aggregations.byClient.set(clientId, current + caTTC);
+      }
+
+      // Agrégation par Ambulance
+      if (g.aumbulanceId) {
+        const ambulanceId = String(g.aumbulanceId);
+        const current = aggregations.byAmbulance.get(ambulanceId) || 0;
+        aggregations.byAmbulance.set(ambulanceId, current + caTTC);
+      }
+
+      // Agrégation par Médecin
+      if (g.medcienId) {
+        const medecinId = String(g.medcienId);
+        const current = aggregations.byMedecin.get(medecinId) || 0;
+        aggregations.byMedecin.set(medecinId, current + caTTC);
+      }
+
+      // Agrégation par Infirmier
+      if (g.infermierId) {
+        const infirmierId = String(g.infermierId);
+        const current = aggregations.byInfirmier.get(infirmierId) || 0;
+        aggregations.byInfirmier.set(infirmierId, current + caTTC);
+      }
+
+      // Agrégation par Mois
+      if (g.dateCreation) {
+        const month = String(g.dateCreation).slice(0, 7);
+        const current = aggregations.byMonth.get(month) || 0;
+        aggregations.byMonth.set(month, current + caTTC);
+      }
+    }
+
+    return aggregations;
+  }, [filtered]);
+
   // Debug: afficher les informations de filtrage (désactivé en production)
   // console.log('Filtres actifs:', currentFilters);
   // console.log('Données totales:', globales.length);
@@ -226,21 +492,11 @@ const Data = () => {
     // Mise à jour pour l'onglet CA Global / BU
     const centerElement = document.getElementById('donut-center');
     if (centerElement && activeTab === 'ca-global-bu' && !loading && filtered.length > 0) {
-      const total = filtered.reduce((sum, g) => sum + (Number(g.caTTC) || 0), 0);
-      
-      // Formater le total de manière plus intelligente
-      const formatTotal = (value) => {
-        if (value >= 1000000) {
-          return `${(value / 1000000).toFixed(1)}M`;
-        } else if (value >= 1000) {
-          return `${(value / 1000).toFixed(0)}k`;
-        }
-        return value.toLocaleString('fr-FR');
-      };
+      const total = precomputedAggregations.totalCA; // Utiliser l'agrégation pré-calculée
       
       centerElement.innerHTML = `
         <tspan x="50%" dy="-0.5em" style="font-size: 1.2rem; font-weight: bold; fill: #333;">
-          ${formatTotal(total)}
+          ${formatValue(total)}
         </tspan>
         <tspan x="50%" dy="1.2em" style="font-size: 1rem; fill: #666;">
           TOTAL
@@ -251,21 +507,11 @@ const Data = () => {
     // Mise à jour pour l'onglet CA Produit Global
     const produitCenterElement = document.getElementById('donut-produit-center');
     if (produitCenterElement && activeTab === 'ca-produit-global' && !loading && filtered.length > 0) {
-      const total = filtered.reduce((sum, g) => sum + (Number(g.caTTC) || 0), 0);
-      
-      // Formater le total de manière plus intelligente
-      const formatTotal = (value) => {
-        if (value >= 1000000) {
-          return `${(value / 1000000).toFixed(1)}M`;
-        } else if (value >= 1000) {
-          return `${(value / 1000).toFixed(0)}k`;
-        }
-        return value.toLocaleString('fr-FR');
-      };
+      const total = precomputedAggregations.totalCA; // Utiliser l'agrégation pré-calculée
       
       produitCenterElement.innerHTML = `
         <tspan x="50%" dy="-0.8em" style="font-size: 1.3rem; font-weight: bold; fill: #333; text-anchor: middle;">
-          ${formatTotal(total)}
+          ${formatValue(total)}
         </tspan>
         <tspan x="50%" dy="1.4em" style="font-size: 1rem; fill: #666; text-anchor: middle;">
           TOTAL
@@ -273,28 +519,20 @@ const Data = () => {
       `;
     }
     
-    // Mise à jour pour l'onglet CA BU / BTOB
+    // Mise à jour pour l'onglet CA BU / BTOB - Optimisé avec pré-calculs
     const btobCenterElement = document.getElementById('donut-btob-center');
     if (btobCenterElement && activeTab === 'ca-bu-btob' && !loading && filtered.length > 0) {
-      const produitBtobData = {};
-      for (const g of filtered) {
-        if (!g.produitId || !g.businessUnitId) continue;
-        const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
-        if (!bu || bu.businessUnitType !== 'b2b') continue;
-        const produit = produits.find(p => String(p.id) === String(g.produitId));
-        if (!produit) continue;
-        const produitName = produit.name;
-        if (!produitBtobData[produitName]) {
-          produitBtobData[produitName] = 0;
+      let totalBtob = 0;
+      for (const [buId, caTTC] of precomputedAggregations.byBusinessUnit.entries()) {
+        const bu = businessUnitsMap.get(buId);
+        if (bu && bu.businessUnitType === 'b2b') {
+          totalBtob += caTTC;
         }
-        const caTTC = Number(g.caTTC) || 0;
-        produitBtobData[produitName] += caTTC;
       }
       
-      const total = Object.values(produitBtobData).reduce((sum, value) => sum + value, 0);
       btobCenterElement.innerHTML = `
         <tspan x="50%" dy="-0.6em" style="font-size: 16px; font-weight: bold; fill: #333;">
-          ${Number(total).toLocaleString('fr-FR')}
+          ${formatValue(totalBtob)}
         </tspan>
         <tspan x="50%" dy="1.2em" style="font-size: 14px; fill: #666;">
           TOTAL
@@ -302,78 +540,58 @@ const Data = () => {
       `;
     }
     
-    // Mise à jour pour l'onglet CA BU / BTOC
+    // Mise à jour pour l'onglet CA BU / BTOC - Optimisé avec pré-calculs
     const btocCenterElement = document.getElementById('donut-btoc-center');
     if (btocCenterElement && activeTab === 'ca-bu-btoc' && !loading && filtered.length > 0) {
-      const produitBtocData = {};
-      for (const g of filtered) {
-        if (!g.produitId || !g.businessUnitId) continue;
-        const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
-        if (!bu || bu.businessUnitType !== 'b2c') continue;
-        const produit = produits.find(p => String(p.id) === String(g.produitId));
-        if (!produit) continue;
-        const produitName = produit.name;
-        if (!produitBtocData[produitName]) {
-          produitBtocData[produitName] = 0;
+      let totalBtoc = 0;
+      for (const [buId, caTTC] of precomputedAggregations.byBusinessUnit.entries()) {
+        const bu = businessUnitsMap.get(buId);
+        if (bu && bu.businessUnitType === 'b2c') {
+          totalBtoc += caTTC;
         }
-        const caTTC = Number(g.caTTC) || 0;
-        produitBtocData[produitName] += caTTC;
       }
       
-      const total = Object.values(produitBtocData).reduce((sum, value) => sum + value, 0);
       btocCenterElement.innerHTML = `
         <tspan x="50%" dy="-0.6em" style="font-size: 16px; font-weight: bold; fill: #333;">
-          ${Number(total).toLocaleString('fr-FR')}
+          ${formatValue(totalBtoc)}
         </tspan>
         <tspan x="50%" dy="1.2em" style="font-size: 14px; fill: #666;">
           TOTAL
         </tspan>
       `;
     }
-  }, [activeTab, loading]);
+  }, [activeTab, loading, precomputedAggregations, formatValue]);
 
   // KPIs supprimés (placeholder pour futur besoin)
 
   // Tous les calculs de graphes retirés; ils seront définis par onglet plus tard
-  // Données Ambulances (CA TTC et Nombre de missions) - Mémoisé
+  // Données Ambulances (CA TTC et Nombre de missions) - Optimisé avec pré-calculs
   const ambulanceAgg = React.useMemo(() => {
     if (activeTab !== 'ambulances') return { caByAmbulance: [], countByAmbulance: [] };
-    const map = new Map();
-    for (const g of filtered) {
-      const key = String(g.aumbulanceId || '');
-      if (!key) continue;
-      if (!map.has(key)) {
-        map.set(key, { caTTC: 0, count: 0 });
-      }
-      const acc = map.get(key);
-      acc.caTTC += Number(g.caTTC) || 0;
-      acc.count += 1;
-    }
+    
     const caByAmbulance = [];
     const countByAmbulance = [];
-    for (const [id, vals] of map.entries()) {
-      const amb = ambulances.find(a => String(a.id) === String(id));
+    
+    // Utiliser les agrégations pré-calculées
+    for (const [id, caTTC] of precomputedAggregations.byAmbulance.entries()) {
+      const amb = ambulancesMap.get(id);
       const name = amb ? amb.numberPlate : id;
-      caByAmbulance.push({ name, value: Math.round(vals.caTTC) });
-      countByAmbulance.push({ name, value: vals.count });
+      caByAmbulance.push({ name, value: Math.round(caTTC) });
+      
+      // Compter les missions pour cette ambulance
+      const missionCount = filtered.filter(g => String(g.aumbulanceId) === id).length;
+      countByAmbulance.push({ name, value: missionCount });
     }
+    
     return { caByAmbulance, countByAmbulance };
-  }, [activeTab, filtered, ambulances]);
+  }, [activeTab, precomputedAggregations, ambulancesMap, filtered]);
 
-  // Pré-agrégations CA Global par mois (pour onglet ca-global)
+  // Pré-agrégations CA Global par mois - Optimisé avec pré-calculs
   const caGlobalByMonth = React.useMemo(() => {
-    const map = new Map();
-    for (const g of filtered) {
-      if (!g.dateCreation) continue;
-      const ym = String(g.dateCreation).slice(0, 7); // YYYY-MM
-      const prev = map.get(ym) || 0;
-      map.set(ym, prev + (Number(g.caTTC) || 0));
-    }
-    const arr = Array.from(map.entries())
+    return Array.from(precomputedAggregations.byMonth.entries())
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([ym, value]) => ({ month: ym, value }));
-    return arr;
-  }, [filtered]);
+      .map(([month, value]) => ({ month, value }));
+  }, [precomputedAggregations]);
 
   // Style pour les dropdowns avec checkboxes
   const dropdownStyle = {
@@ -434,14 +652,74 @@ const Data = () => {
     height: '16px',
   };
 
-  // Fonction pour gérer les effets de survol des éléments de dropdown
-  const handleDropdownItemHover = (event) => {
-    event.target.style.backgroundColor = '#f8f9fa';
-  };
+  const handleChartMouseEnter = useCallback((data, index) => {
+    // Effet de survol optimisé - le segment se met en évidence
+    const pieElement = document.querySelector('.recharts-pie');
+    if (pieElement) {
+      const segments = pieElement.querySelectorAll('.recharts-pie-sector');
+      segments.forEach((seg, i) => {
+        if (i === index) {
+          seg.style.filter = 'brightness(1.2) drop-shadow(0 0 8px rgba(0,0,0,0.3))';
+        } else {
+          seg.style.filter = 'brightness(0.8)';
+        }
+      });
+    }
+    
+    // Mettre à jour le contenu central avec le nom et la valeur
+    const centerElement = document.getElementById('donut-center');
+    if (centerElement && data) {
+      const fontSize = windowWidth <= 480 ? '0.9rem' : '1.2rem';
+      const fontSizeSmall = windowWidth <= 480 ? '0.8rem' : '1rem';
+      
+      centerElement.innerHTML = `
+        <tspan x="50%" dy="-0.2em" style="font-size: ${fontSize}; font-weight: bold; fill: #333;">
+          ${formatValue(data.value)}
+        </tspan>
+        <tspan x="50%" dy="0.8em" style="font-size: ${fontSizeSmall}; fill: #666;">
+          ${data.name}
+        </tspan>
+      `;
+    }
+  }, [windowWidth, formatValue]);
 
-  const handleDropdownItemLeave = (event) => {
+  const handleChartMouseLeave = useCallback(() => {
+    // Retour à l'état normal
+    const pieElement = document.querySelector('.recharts-pie');
+    if (pieElement) {
+      const segments = pieElement.querySelectorAll('.recharts-pie-sector');
+      segments.forEach(seg => {
+        seg.style.filter = 'none';
+      });
+    }
+    
+    // Remettre le total au centre avec le bon formatage
+    const centerElement = document.getElementById('donut-center');
+    if (centerElement) {
+      const total = filtered.reduce((sum, g) => sum + (Number(g.caTTC) || 0), 0);
+      
+      const fontSize = windowWidth <= 480 ? '0.9rem' : '1.2rem';
+      const fontSizeSmall = windowWidth <= 480 ? '0.8rem' : '1rem';
+      
+      centerElement.innerHTML = `
+        <tspan x="50%" dy="-0.2em" style="font-size: ${fontSize}; font-weight: bold; fill: #333;">
+          ${formatValue(total)}
+        </tspan>
+        <tspan x="50%" dy="0.8em" style="font-size: ${fontSizeSmall}; fill: #666;">
+          TOTAL
+        </tspan>
+      `;
+    }
+  }, [filtered, windowWidth, formatValue]);
+
+  // Fonction pour gérer les effets de survol des éléments de dropdown
+  const handleDropdownItemHover = useCallback((event) => {
+    event.target.style.backgroundColor = '#f8f9fa';
+  }, []);
+
+  const handleDropdownItemLeave = useCallback((event) => {
     event.target.style.backgroundColor = '#fff';
-  };
+  }, []);
 
   const dropdownButtonStyle = {
     padding: '10px 16px',
@@ -490,23 +768,29 @@ const Data = () => {
 
   return (
     <div className="data-layout">
+      <style>{mobileStyle}</style>
       <Sidebar />
       <main className="data-main">
         <h2 className="data-title">Analytique</h2>
-        {/* Navigator Tabs */}
-        <div style={{ display: 'flex', gap: 8, margin: '0 0 1rem 0', borderBottom: '1px solid #e5e7eb' }}>
+        {/* Navigator Tabs - Responsive */}
+        <div className="tabs-container" style={{ 
+          display: 'flex', 
+          gap: 8, 
+          margin: '0 0 1rem 0', 
+          borderBottom: '1px solid #e5e7eb',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#cbd5e0 #f7fafc',
+          WebkitOverflowScrolling: 'touch'
+        }}>
           {TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               style={{
-                padding: '10px 14px',
-                border: 'none',
                 borderBottom: activeTab === tab.key ? '3px solid #1976d2' : '3px solid transparent',
-                background: 'transparent',
-                color: activeTab === tab.key ? '#111827' : '#6b7280',
-                cursor: 'pointer',
-                fontWeight: 600
+                color: activeTab === tab.key ? '#111827' : '#6b7280'
               }}
             >
               {tab.label}
@@ -1025,13 +1309,13 @@ const Data = () => {
         {/* Contenu de l'onglet actif */}
         <section className="data-graphs">
           {activeTab === 'ambulances' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <div className="graph-block" style={{ padding: '1rem', background: '#fff', borderRadius: 8 }}>
                 <h4>CA / Ambulance</h4>
                 <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#f5f5f5', borderRadius: '4px', textAlign: 'center' }}>
                   <strong>Total CA: {ambulanceAgg.caByAmbulance.reduce((sum, item) => sum + item.value, 0).toLocaleString('fr-FR')} DH</strong>
                 </div>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                   <BarChart data={ambulanceAgg.caByAmbulance}>
                 <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" type="category" interval={0} angle={-45} textAnchor="end" height={80} />
@@ -1043,7 +1327,7 @@ const Data = () => {
           </div>
               <div className="graph-block" style={{ padding: '1rem', background: '#fff', borderRadius: 8 }}>
                 <h4>Nombre de Mission</h4>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                   <BarChart data={ambulanceAgg.countByAmbulance}>
                 <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" type="category" interval={0} angle={-45} textAnchor="end" height={80} />
@@ -1105,7 +1389,7 @@ const Data = () => {
               </div>
           </div>
           ) : activeTab === 'ca-global' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="graph-block">
                 <h4>CA Global Par Mois - T</h4>
                 <div style={{ overflowX: 'auto' }}>
@@ -1129,7 +1413,7 @@ const Data = () => {
           </div>
           <div className="graph-block">
                 <h4>CA Global Par Mois</h4>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                   <LineChart data={caGlobalByMonth} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" tickFormatter={(m) => new Date(m + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })} interval={0} angle={-30} textAnchor="end" height={60} />
@@ -1142,22 +1426,22 @@ const Data = () => {
           </div>
           </div>
           ) : activeTab === 'ca-global-bu' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Donut Chart - CA Global / BU */}
               <div className="graph-block">
                 <h4>CA Global / BU</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
+                    <PieChart width={400} height={400}>
                       <Pie
-                        data={(() => {
+                        data=                        {(() => {
                           const buData = {};
-                          for (const g of filtered) {
-                            if (!g.businessUnitId) continue;
-                            const bu = businessUnits.find(b => String(b.id) === String(g.businessUnitId));
+                          // Utiliser les agrégations pré-calculées pour les Business Units
+                          for (const [buId, caTTC] of precomputedAggregations.byBusinessUnit.entries()) {
+                            const bu = businessUnitsMap.get(buId);
                             if (!bu) continue;
                             const buType = bu.businessUnitType;
-                            buData[buType] = (buData[buType] || 0) + (Number(g.caTTC) || 0);
+                            buData[buType] = (buData[buType] || 0) + caTTC;
                           }
                           const total = Object.values(buData).reduce((sum, val) => sum + val, 0);
                           return Object.entries(buData).map(([type, value]) => ({
@@ -1168,82 +1452,12 @@ const Data = () => {
                         })()}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
+                        innerRadius={windowWidth <= 480 ? 40 : 60}
+                        outerRadius={windowWidth <= 480 ? 80 : 100}
                         paddingAngle={5}
                         dataKey="value"
-                        onMouseEnter={(data, index) => {
-                          // Effet de survol - le segment se met en évidence
-                          const pieElement = document.querySelector('.recharts-pie');
-                          if (pieElement) {
-                            const segments = pieElement.querySelectorAll('.recharts-pie-sector');
-                            segments.forEach((seg, i) => {
-                              if (i === index) {
-                                seg.style.filter = 'brightness(1.2) drop-shadow(0 0 8px rgba(0,0,0,0.3))';
-                              } else {
-                                seg.style.filter = 'brightness(0.8)';
-                              }
-                            });
-                          }
-                          
-                          // Mettre à jour le contenu central avec le nom et la valeur
-                          const centerElement = document.getElementById('donut-center');
-                          if (centerElement && data) {
-                            // Formater la valeur en format court
-                            const formatValue = (value) => {
-                              if (value >= 1000000) {
-                                return `${(value / 1000000).toFixed(1)}M`;
-                              } else if (value >= 1000) {
-                                return `${(value / 1000).toFixed(0)}k`;
-                              }
-                              return value.toLocaleString('fr-FR');
-                            };
-                            
-                            centerElement.innerHTML = `
-                              <tspan x="50%" dy="-0.5em" style="font-size: 1.2rem; font-weight: bold; fill: #333;">
-                                ${formatValue(data.value)}
-                              </tspan>
-                              <tspan x="50%" dy="1.2em" style="font-size: 1rem; fill: #666;">
-                                ${data.name}
-                              </tspan>
-                            `;
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          // Retour à l'état normal
-                          const pieElement = document.querySelector('.recharts-pie');
-                          if (pieElement) {
-                            const segments = pieElement.querySelectorAll('.recharts-pie-sector');
-                            segments.forEach(seg => {
-                              seg.style.filter = 'none';
-                            });
-                          }
-                          
-                          // Remettre le total au centre avec le bon formatage
-                          const centerElement = document.getElementById('donut-center');
-                          if (centerElement) {
-                            const total = filtered.reduce((sum, g) => sum + (Number(g.caTTC) || 0), 0);
-                            
-                            // Utiliser la même fonction de formatage
-                            const formatTotal = (value) => {
-                              if (value >= 1000000) {
-                                return `${(value / 1000000).toFixed(1)}M`;
-                              } else if (value >= 1000) {
-                                return `${(value / 1000).toFixed(0)}k`;
-                              }
-                              return value.toLocaleString('fr-FR');
-                            };
-                            
-                            centerElement.innerHTML = `
-                              <tspan x="50%" dy="-0.5em" style="font-size: 1.2rem; font-weight: bold; fill: #333;">
-                                ${formatTotal(total)}
-                              </tspan>
-                              <tspan x="50%" dy="1.2em" style="font-size: 1rem; fill: #666;">
-                                TOTAL
-                              </tspan>
-                            `;
-                          }
-                        }}
+                        onMouseEnter={handleChartMouseEnter}
+                        onMouseLeave={handleChartMouseLeave}
                       >
                         {(() => {
                           const buData = {};
@@ -1273,7 +1487,7 @@ const Data = () => {
                       
                       {/* Contenu central du donut */}
                       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" id="donut-center">
-                        <tspan x="50%" dy="-0.5em" style={{ fontSize: '1.2rem', fontWeight: 'bold', fill: '#333' }}>
+                        <tspan x="50%" dy="-0.2em" style={{ fontSize: windowWidth <= 480 ? '0.9rem' : '1.2rem', fontWeight: 'bold', fill: '#333' }}>
                           {(() => {
                             const total = filtered.reduce((sum, g) => sum + (Number(g.caTTC) || 0), 0);
                             const formatTotal = (value) => {
@@ -1287,7 +1501,7 @@ const Data = () => {
                             return formatTotal(total);
                           })()}
                         </tspan>
-                        <tspan x="50%" dy="1.2em" style={{ fontSize: '1rem', fill: '#666' }}>
+                        <tspan x="50%" dy="0.8em" style={{ fontSize: windowWidth <= 480 ? '0.8rem' : '1rem', fill: '#666' }}>
                           TOTAL
                         </tspan>
                       </text>
@@ -1382,7 +1596,7 @@ const Data = () => {
               {/* Line Chart - CA Global / BU / Mois */}
               <div className="graph-block">
                 <h4>CA Global / BU / Mois</h4>
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                   <LineChart data={(() => {
                     const monthData = {};
                     for (const g of filtered) {
@@ -1491,12 +1705,12 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-produit-global' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Donut Chart - CA Global Par Produit */}
               <div className="graph-block">
                 <h4>CA Global Par Produit</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <PieChart>
                       <Pie
                         data={(() => {
@@ -2210,7 +2424,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>CA par Produit / assurances - T</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const clientProduitData = {};
@@ -2309,7 +2523,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>CA Assurance / Client / Mois</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <LineChart
                       data={(() => {
                         const clientMoisData = {};
@@ -2440,7 +2654,7 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-bu-btob' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Tableau - CA BU / BTOB */}
               <div className="graph-block">
                 <h4>CA BU / BTOB</h4>
@@ -2807,7 +3021,7 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-bu-btoc' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en anneau - CA / BU / BTOC */}
               <div className="graph-block">
                 <h4>CA / BU / BTOC</h4>
@@ -3088,12 +3302,12 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-assurance-wafa-ima' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en barres - CA / BU / WAFAIMA */}
               <div className="graph-block">
                 <h4>CA / BU / WAFAIMA</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const produitWafaimaData = {};
@@ -3173,7 +3387,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>CA WAFA IMA/ Mois</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <LineChart
                       data={(() => {
                         const monthlyData = {};
@@ -3256,12 +3470,12 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-mai' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en barres - CA / Produit */}
               <div className="graph-block">
                 <h4>CA / Produit</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const produitMaiData = {};
@@ -3337,7 +3551,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>CA MAI / Mois</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <LineChart
                       data={(() => {
                         const monthlyData = {};
@@ -3420,23 +3634,23 @@ const Data = () => {
           </div>
           </div>
           ) : activeTab === 'ca-afa' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en barres - CA / Produit */}
               <div className="graph-block">
                 <h4>CA / Produit</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const produitAfaData = {};
                         
-                        // Agréger les données par produit (uniquement pour AFA)
+                        // Agréger les données par produit (uniquement pour Africa First Assist)
                         for (const g of filtered) {
                           if (!g.produitId || !g.clientId) continue;
                           
-                          // Vérifier que c'est bien AFA
+                          // Vérifier que c'est bien Africa First Assist
                           const client = clients.find(c => String(c.id) === String(g.clientId));
-                          if (!client || client.clientFullName !== 'Afa') continue;
+                          if (!client || client.clientFullName !== 'Africa First Assist') continue;
                           
                           const produit = produits.find(p => String(p.id) === String(g.produitId));
                           if (!produit) continue;
@@ -3499,20 +3713,20 @@ const Data = () => {
 
               {/* Graphique en ligne - CA AFA / Mois */}
               <div className="graph-block">
-                <h4>CA AFA / Mois</h4>
+                <h4>CA Africa First Assist / Mois</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <LineChart
                       data={(() => {
                         const monthlyData = {};
                         
-                        // Agréger les données par mois (uniquement pour AFA)
+                        // Agréger les données par mois (uniquement pour Africa First Assist)
                         for (const g of filtered) {
                           if (!g.dateCreation || !g.clientId) continue;
                           
-                          // Vérifier que c'est bien AFA
+                          // Vérifier que c'est bien Africa First Assist
                           const client = clients.find(c => String(c.id) === String(g.clientId));
-                          if (!client || client.clientFullName !== 'Afa') continue;
+                          if (!client || client.clientFullName !== 'Africa First Assist') continue;
                           
                           const date = new Date(g.dateCreation);
                           const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -3584,12 +3798,12 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'marge-b2b' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en barres horizontales - Marge Ebdeta (TGCC) */}
               <div className="graph-block">
                 <h4>Marge Ebdeta</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const monthlyMargeData = {};
@@ -3685,7 +3899,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>Ebdeta Honoris</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const monthlyMargeData = {};
@@ -3938,7 +4152,7 @@ const Data = () => {
               <div className="graph-block">
                 <h4>Résumé CA par Médecin (ACTE MEDECIN + TAM)</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const medecinSummary = {};
@@ -4013,12 +4227,12 @@ const Data = () => {
               </div>
             </div>
           ) : activeTab === 'ca-infirmier' ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="mobile-single-column" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               {/* Graphique en barres - CA / Infirmier */}
               <div className="graph-block">
                 <h4>CA / Infirmier</h4>
                 {!loading && filtered.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
+                  <ResponsiveContainer width="100%" height={getResponsiveHeight(windowWidth)}>
                     <BarChart
                       data={(() => {
                         const infirmierData = {};
