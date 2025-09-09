@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
 import '../styles/Dashboard-Responsive.css';
@@ -477,9 +477,38 @@ const Dashboard = () => {
 
   const [notification, setNotification] = useState({ message: '', type: '' });
 
-  const showNotification = (message, type) => {
+  // OPTIMISATION 1: Créer des Maps pour les recherches rapides (avec vérification de sécurité)
+  const villesMap = useMemo(() => {
+    return villes && villes.length > 0 ? new Map(villes.map(v => [String(v.id), v])) : new Map();
+  }, [villes]);
+
+  const clientsMap = useMemo(() => {
+    return clients && clients.length > 0 ? new Map(clients.map(c => [String(c.id), c])) : new Map();
+  }, [clients]);
+
+  const ambulancesMap = useMemo(() => {
+    return ambulances && ambulances.length > 0 ? new Map(ambulances.map(a => [String(a.id), a])) : new Map();
+  }, [ambulances]);
+
+  const businessUnitsMap = useMemo(() => {
+    return businessUnits && businessUnits.length > 0 ? new Map(businessUnits.map(bu => [String(bu.id), bu])) : new Map();
+  }, [businessUnits]);
+
+  const medecinsMap = useMemo(() => {
+    return medciens && medciens.length > 0 ? new Map(medciens.map(m => [String(m.id), m])) : new Map();
+  }, [medciens]);
+
+  const infirmiersMap = useMemo(() => {
+    return infirmiers && infirmiers.length > 0 ? new Map(infirmiers.map(i => [String(i.id), i])) : new Map();
+  }, [infirmiers]);
+
+  const produitsMap = useMemo(() => {
+    return produits && produits.length > 0 ? new Map(produits.map(p => [String(p.id), p])) : new Map();
+  }, [produits]);
+
+  const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
-  };
+  }, []);
 
   useEffect(() => {
     // Charger toutes les listes dynamiques
@@ -656,87 +685,87 @@ const Dashboard = () => {
     }
   };
 
-  // Fonctions pour gérer la multi-sélection des filtres
-  const handleFilterVilleChange = (villeId) => {
+  // OPTIMISATION 5: Fonctions de filtre mémoisées
+  const handleFilterVilleChange = useCallback((villeId) => {
     const villeIdStr = String(villeId);
     setFilterVille(prev => 
       prev.includes(villeIdStr) 
         ? prev.filter(id => id !== villeIdStr)
         : [...prev, villeIdStr]
     );
-  };
+  }, []);
 
-  const handleFilterProduitChange = (produitId) => {
+  const handleFilterProduitChange = useCallback((produitId) => {
     const produitIdStr = String(produitId);
     setFilterProduit(prev => 
       prev.includes(produitIdStr) 
         ? prev.filter(id => id !== produitIdStr)
         : [...prev, produitIdStr]
     );
-  };
+  }, []);
 
-  const handleFilterMedecinChange = (medecinId) => {
+  const handleFilterMedecinChange = useCallback((medecinId) => {
     const medecinIdStr = String(medecinId);
     setFilterMedecin(prev => 
       prev.includes(medecinIdStr) 
         ? prev.filter(id => id !== medecinIdStr)
         : [...prev, medecinIdStr]
     );
-  };
+  }, []);
 
-  const handleFilterEtatPaiementChange = (etat) => {
+  const handleFilterEtatPaiementChange = useCallback((etat) => {
     setFilterEtatPaiement(prev => 
       prev.includes(etat) 
         ? prev.filter(e => e !== etat)
         : [...prev, etat]
     );
-  };
+  }, []);
 
-  const handleFilterClientChange = (clientId) => {
+  const handleFilterClientChange = useCallback((clientId) => {
     const clientIdStr = String(clientId);
     setFilterClient(prev => 
       prev.includes(clientIdStr) 
         ? prev.filter(id => id !== clientIdStr)
         : [...prev, clientIdStr]
     );
-  };
+  }, []);
 
-  const handleFilterAmbulanceChange = (ambulanceId) => {
+  const handleFilterAmbulanceChange = useCallback((ambulanceId) => {
     const ambulanceIdStr = String(ambulanceId);
     setFilterAmbulance(prev => 
       prev.includes(ambulanceIdStr) 
         ? prev.filter(id => id !== ambulanceIdStr)
         : [...prev, ambulanceIdStr]
     );
-  };
+  }, []);
 
-  const handleFilterRefChange = (ref) => {
+  const handleFilterRefChange = useCallback((ref) => {
     setFilterRef(prev => 
       prev.includes(ref) 
         ? prev.filter(r => r !== ref)
         : [...prev, ref]
     );
-  };
+  }, []);
 
-  const handleAddRef = (ref) => {
+  const handleAddRef = useCallback((ref) => {
     if (ref.trim() && !filterRef.includes(ref.trim())) {
       setFilterRef(prev => [...prev, ref.trim()]);
       setNewRefInput('');
     }
-  };
+  }, [filterRef]);
 
-  const handleRemoveRef = (index) => {
+  const handleRemoveRef = useCallback((index) => {
     setFilterRef(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const handleFilterBUChange = (buId) => {
+  const handleFilterBUChange = useCallback((buId) => {
     const buIdStr = String(buId);
     setFilterBU(prev => 
       prev.includes(buIdStr) 
         ? prev.filter(id => id !== buIdStr)
         : [...prev, buIdStr]
     );
-  };
+  }, []);
 
 
 
@@ -747,119 +776,146 @@ const Dashboard = () => {
     });
   };
 
-  const globalesFiltered = globales.filter(item => {
-    // Recherche textuelle
-    if (filtres.recherche && filtres.recherche.trim()) {
-      const searchTerm = filtres.recherche.toLowerCase();
-      const searchableFields = [
-        item.Ref || '',
-        item.fullName || '',
-        item.numTelephone || '',
-        item.note || '',
-        getVilleName(item.villeId),
-        getProduitName(item.produitId),
-        getClientName(item.clientId),
-        getBUType(item.businessUnitId),
-        getAmbulanceName(item.aumbulanceId),
-        isInfirmierAct(item.produitId, produits) 
-          ? getNom(infirmiers, item.infermierId, 'nom')
-          : getMedecinName(item.medcienId)
-      ].join(' ').toLowerCase();
+  // OPTIMISATION 2: Fonctions de recherche optimisées avec Maps (avec vérification de sécurité)
+  const getNom = useCallback((map, id, field = 'name') => {
+    if (!map || !map.get) return '';
+    const found = map.get(String(id));
+    return found ? (found[field] || found.nom) : '';
+  }, []);
+
+  const getClientName = useCallback(id => getNom(clientsMap, id, 'clientFullName'), [clientsMap, getNom]);
+  const getVilleName = useCallback(id => getNom(villesMap, id, 'name'), [villesMap, getNom]);
+  const getProduitName = useCallback(id => getNom(produitsMap, id, 'name'), [produitsMap, getNom]);
+  const getAmbulanceName = useCallback(id => getNom(ambulancesMap, id, 'numberPlate'), [ambulancesMap, getNom]);
+  const getMedecinName = useCallback(id => getNom(medecinsMap, id, 'name'), [medecinsMap, getNom]);
+  const getBUType = useCallback(id => getNom(businessUnitsMap, id, 'businessUnitType'), [businessUnitsMap, getNom]);
+
+  // OPTIMISATION 3: Filtrage mémoisé pour éviter les recalculs
+  const globalesFiltered = useMemo(() => {
+    return globales.filter(item => {
+      // Recherche textuelle optimisée
+      if (filtres.recherche && filtres.recherche.trim()) {
+        const searchTerm = filtres.recherche.toLowerCase();
+        const searchableFields = [
+          item.Ref || '',
+          item.fullName || '',
+          item.numTelephone || '',
+          item.note || '',
+          getVilleName(item.villeId),
+          getProduitName(item.produitId),
+          getClientName(item.clientId),
+          getBUType(item.businessUnitId),
+          getAmbulanceName(item.aumbulanceId),
+          isInfirmierAct(item.produitId, produits) 
+            ? getNom(infirmiersMap, item.infermierId, 'nom')
+            : getMedecinName(item.medcienId)
+        ].join(' ').toLowerCase();
+        
+        if (!searchableFields.includes(searchTerm)) return false;
+      }
+
+      // Client (multi-sélection) - gérer les valeurs nulles
+      if (filterClient.length > 0) {
+        if (!item.clientId || !filterClient.includes(String(item.clientId))) return false;
+      }
       
-      if (!searchableFields.includes(searchTerm)) return false;
-    }
-
-    // Client (multi-sélection) - gérer les valeurs nulles
-    if (filterClient.length > 0) {
-      if (!item.clientId || !filterClient.includes(String(item.clientId))) return false;
-    }
-    
-    // Ambulance (multi-sélection) - gérer les valeurs nulles
-    if (filterAmbulance.length > 0) {
-      if (!item.aumbulanceId || !filterAmbulance.includes(String(item.aumbulanceId))) return false;
-    }
-    
-         // Référence (recherche partielle) - gérer les valeurs nulles
-     if (filterRef.length > 0) {
-       if (!item.Ref) return false;
-       // Vérifier si au moins une des références du filtre est contenue dans la référence de l'item
-       const itemRef = item.Ref.toLowerCase();
-       const hasMatchingRef = filterRef.some(filterRefItem => 
-         itemRef.includes(filterRefItem.toLowerCase())
-       );
-       if (!hasMatchingRef) return false;
-     }
-    
-    // Business Unit (multi-sélection) - gérer les valeurs nulles
-    if (filterBU.length > 0) {
-      if (!item.businessUnitId || !filterBU.includes(String(item.businessUnitId))) return false;
-    }
-    
-    // Date Début - gérer les valeurs nulles
-    if (filterDateStart && item.dateCreation) {
-      const itemDate = new Date(item.dateCreation);
-      const startDate = new Date(filterDateStart);
-      if (itemDate.setHours(0,0,0,0) < startDate.setHours(0,0,0,0)) return false;
-    }
-    
-    // Date Fin - gérer les valeurs nulles
-    if (filterDateEnd && item.dateCreation) {
-      const itemDate = new Date(item.dateCreation);
-      const endDate = new Date(filterDateEnd);
-      if (itemDate.setHours(0,0,0,0) > endDate.setHours(0,0,0,0)) return false;
-    }
-    
-    // Ville (multi-sélection) - gérer les valeurs nulles
-    if (filterVille.length > 0) {
-      if (!item.villeId || !filterVille.includes(String(item.villeId))) return false;
-    }
-    
-    // Produit (multi-sélection) - gérer les valeurs nulles
-    if (filterProduit.length > 0) {
-      if (!item.produitId || !filterProduit.includes(String(item.produitId))) return false;
-    }
-    
-    // Médecin/Infirmier (multi-sélection) - gérer les valeurs nulles
-    if (filterMedecin.length > 0) {
-      const medecinId = isInfirmierAct(item.produitId, produits) ? item.infermierId : item.medcienId;
-      if (!medecinId || !filterMedecin.includes(String(medecinId))) return false;
-    }
-    
-    // État de paiement (multi-sélection) - gérer les valeurs nulles
-    if (filterEtatPaiement.length > 0) {
-      if (!item.etatdePaiment || !filterEtatPaiement.includes(item.etatdePaiment)) return false;
-    }
-    
-    // Filtre CA TTC Min
-    if (filterCaTTCMin && item.caTTC) {
-      const caTTCValue = parseFloat(item.caTTC);
-      const minValue = parseFloat(filterCaTTCMin);
-      if (caTTCValue < minValue) return false;
-    }
-    
-    // Filtre CA TTC Max
-    if (filterCaTTCMax && item.caTTC) {
-      const caTTCValue = parseFloat(item.caTTC);
-      const maxValue = parseFloat(filterCaTTCMax);
-      if (caTTCValue > maxValue) return false;
-    }
-    
-    
-    
-    return true;
-  });
-
-  // Helpers pour afficher les noms à partir des IDs
-  const getNom = (arr, id, field = 'name') => {
-    const found = arr.find(x => String(x.id) === String(id));
-    return found ? (found[field] || found.nom) : ''; // Essayer field ou nom
-  };
-  const getClientName = id => getNom(clients, id, 'clientFullName');
-  const getVilleName = id => getNom(villes, id, 'name');
-  const getProduitName = id => getNom(produits, id, 'name');
-  const getAmbulanceName = id => getNom(ambulances, id, 'numberPlate');
-  const getMedecinName = id => getNom(medciens, id, 'name');
-  const getBUType = id => getNom(businessUnits, id, 'businessUnitType');
+      // Ambulance (multi-sélection) - gérer les valeurs nulles
+      if (filterAmbulance.length > 0) {
+        if (!item.aumbulanceId || !filterAmbulance.includes(String(item.aumbulanceId))) return false;
+      }
+      
+      // Référence (recherche partielle) - gérer les valeurs nulles
+      if (filterRef.length > 0) {
+        if (!item.Ref) return false;
+        // Vérifier si au moins une des références du filtre est contenue dans la référence de l'item
+        const itemRef = item.Ref.toLowerCase();
+        const hasMatchingRef = filterRef.some(filterRefItem => 
+          itemRef.includes(filterRefItem.toLowerCase())
+        );
+        if (!hasMatchingRef) return false;
+      }
+      
+      // Business Unit (multi-sélection) - gérer les valeurs nulles
+      if (filterBU.length > 0) {
+        if (!item.businessUnitId || !filterBU.includes(String(item.businessUnitId))) return false;
+      }
+      
+      // Date Début - gérer les valeurs nulles
+      if (filterDateStart && item.dateCreation) {
+        const itemDate = new Date(item.dateCreation);
+        const startDate = new Date(filterDateStart);
+        if (itemDate.setHours(0,0,0,0) < startDate.setHours(0,0,0,0)) return false;
+      }
+      
+      // Date Fin - gérer les valeurs nulles
+      if (filterDateEnd && item.dateCreation) {
+        const itemDate = new Date(item.dateCreation);
+        const endDate = new Date(filterDateEnd);
+        if (itemDate.setHours(0,0,0,0) > endDate.setHours(0,0,0,0)) return false;
+      }
+      
+      // Ville (multi-sélection) - gérer les valeurs nulles
+      if (filterVille.length > 0) {
+        if (!item.villeId || !filterVille.includes(String(item.villeId))) return false;
+      }
+      
+      // Produit (multi-sélection) - gérer les valeurs nulles
+      if (filterProduit.length > 0) {
+        if (!item.produitId || !filterProduit.includes(String(item.produitId))) return false;
+      }
+      
+      // Médecin/Infirmier (multi-sélection) - gérer les valeurs nulles
+      if (filterMedecin.length > 0) {
+        const medecinId = isInfirmierAct(item.produitId, produits) ? item.infermierId : item.medcienId;
+        if (!medecinId || !filterMedecin.includes(String(medecinId))) return false;
+      }
+      
+      // État de paiement (multi-sélection) - gérer les valeurs nulles
+      if (filterEtatPaiement.length > 0) {
+        if (!item.etatdePaiment || !filterEtatPaiement.includes(item.etatdePaiment)) return false;
+      }
+      
+      // Filtre CA TTC Min
+      if (filterCaTTCMin && item.caTTC) {
+        const caTTCValue = parseFloat(item.caTTC);
+        const minValue = parseFloat(filterCaTTCMin);
+        if (caTTCValue < minValue) return false;
+      }
+      
+      // Filtre CA TTC Max
+      if (filterCaTTCMax && item.caTTC) {
+        const caTTCValue = parseFloat(item.caTTC);
+        const maxValue = parseFloat(filterCaTTCMax);
+        if (caTTCValue > maxValue) return false;
+      }
+      
+      return true;
+    });
+  }, [
+    globales, 
+    filtres.recherche, 
+    filterClient, 
+    filterAmbulance, 
+    filterRef, 
+    filterBU, 
+    filterDateStart, 
+    filterDateEnd, 
+    filterVille, 
+    filterProduit, 
+    filterMedecin, 
+    filterEtatPaiement, 
+    filterCaTTCMin, 
+    filterCaTTCMax,
+    getVilleName,
+    getProduitName,
+    getClientName,
+    getBUType,
+    getAmbulanceName,
+    getMedecinName,
+    getNom,
+    infirmiersMap,
+    produits
+  ]);
 
   const handleEdit = (globale) => {
     setEditingGlobale(globale);
@@ -986,12 +1042,15 @@ const Dashboard = () => {
     }
   };
 
-  const totalRows = globalesFiltered.length;
-  const totalPages = Math.ceil(totalRows / rowsPerPage);
-  const paginatedRows = globalesFiltered.slice(
-    (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
-  );
+  // OPTIMISATION 4: Pagination mémoisée
+  const totalRows = useMemo(() => globalesFiltered.length, [globalesFiltered]);
+  const totalPages = useMemo(() => Math.ceil(totalRows / rowsPerPage), [totalRows, rowsPerPage]);
+  const paginatedRows = useMemo(() => {
+    return globalesFiltered.slice(
+      (currentPage - 1) * rowsPerPage,
+      currentPage * rowsPerPage
+    );
+  }, [globalesFiltered, currentPage, rowsPerPage]);
 
   useEffect(() => {
     setCurrentPage(1);
