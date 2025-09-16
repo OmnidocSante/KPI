@@ -19,9 +19,11 @@ const clientRoutes = require('./routes/clientRoutes');
 const medecinRoutes = require('./routes/medecinRoutes');
 const infirmierRoutes = require('./routes/infirmierRoute');
 const produitRoutes = require('./routes/produitRoutes');
+const chargeRoutes = require('./routes/chargeRoutes');
 const userRoutes = require('./routes/userRoutes');
 const villeRoutes = require('./routes/villeRoutes');
 const globaleRoutes = require('./routes/globaleRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -49,9 +51,11 @@ app.use('/clients', clientRoutes);
 app.use('/medecins', medecinRoutes);
 app.use('/infirmiers', infirmierRoutes);
 app.use('/produits', produitRoutes);
+app.use('/charges', chargeRoutes);
 app.use('/users', userRoutes);
 app.use('/villes', villeRoutes);
 app.use('/globales', globaleRoutes);
+app.use('/reports', reportRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {

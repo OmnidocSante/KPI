@@ -9,6 +9,8 @@ const dbConfig = {
   password: 'Regulation@2025',
   database: 'omnidocdb',
   port: 3306,
+  dateStrings: true,
+  timezone: 'Z',
   ssl: {
     ca: fs.readFileSync(path.join(__dirname, 'DigiCertGlobalRootCA.crt.pem'))
   },
