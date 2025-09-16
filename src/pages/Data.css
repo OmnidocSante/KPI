@@ -376,4 +376,85 @@
   div[style*="display: 'grid'"] {
     grid-template-columns: 1fr !important;
   }
+}
+
+/* Support du mode sombre pour la page Data */
+@media (prefers-color-scheme: dark) {
+  .data-layout {
+    background: #1a1a1a;
+  }
+  
+  .data-main {
+    background-color: #1a1a1a;
+  }
+  
+  .data-title {
+    color: #1976d2;
+  }
+  
+  .data-filters {
+    background: #2d2d2d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .data-filters label {
+    color: #1976d2;
+  }
+  
+  .data-filters input,
+  .data-filters select {
+    background: #3d3d3d;
+    border-color: #555;
+    color: #ffffff;
+  }
+  
+  .data-filters input:focus,
+  .data-filters select:focus {
+    background: #4d4d4d;
+    border-color: #1976d2;
+    color: #ffffff;
+  }
+  
+  .dropdown-container > div[style*="position: absolute"] {
+    background: #3d3d3d !important;
+    border-color: #555 !important;
+    color: #ffffff !important;
+  }
+  
+  .data-kpi-card {
+    background: #2d2d2d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .kpi-label {
+    color: #e0e0e0;
+  }
+  
+  .graph-block {
+    background: #2d2d2d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .graph-block h4 {
+    color: #1976d2;
+  }
+  
+  .simple-table thead th {
+    background: #3d3d3d;
+    color: #ffffff;
+    border-bottom-color: #555;
+  }
+  
+  .simple-table tbody td {
+    color: #ffffff;
+    border-bottom-color: #555;
+  }
+  
+  .simple-table tbody tr:hover {
+    background: #3d3d3d;
+  }
+  
+  .simple-table .rank {
+    color: #999;
+  }
 } 

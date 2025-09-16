@@ -94,6 +94,29 @@ export const createProduit = (data) => api.post('/produits', data);
 export const updateProduit = (id, data) => api.put(`/produits/${id}`, data);
 export const deleteProduit = (id) => api.delete(`/produits/${id}`);
 
+// Fonctions pour l'API Charges
+export const fetchChargeCategories = () => api.get('/charges/categories');
+export const createChargeCategory = (data) => api.post('/charges/categories', data);
+export const updateChargeCategory = (id, data) => api.put(`/charges/categories/${id}`, data);
+export const deleteChargeCategory = (id) => api.delete(`/charges/categories/${id}`);
+
+export const fetchCharges = () => api.get('/charges');
+export const fetchChargeById = (id) => api.get(`/charges/${id}`);
+export const createCharge = (data) => api.post('/charges', data);
+export const updateCharge = (id, data) => api.put(`/charges/${id}`, data);
+export const deleteCharge = (id) => api.delete(`/charges/${id}`);
+export const fetchChargeInstallments = (chargeId) => api.get(`/charges/${chargeId}/installments`);
+export const payChargeInstallment = (installmentId) => api.patch(`/charges/installments/${installmentId}/pay`);
+
+// Rapports
+export const fetchProfitReport = ({ start, end, paidOnly } = {}) => {
+  const params = new URLSearchParams();
+  if (start) params.append('start', start);
+  if (end) params.append('end', end);
+  if (paidOnly) params.append('paidOnly', '1');
+  return api.get(`/reports/profit?${params.toString()}`);
+};
+
 
 
 export { getNom };

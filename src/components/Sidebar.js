@@ -18,6 +18,7 @@ const Sidebar = () => {
     { path: '/medecins', label: 'Médecins', icon: '🩺' },
     { path: '/infirmiers', label: 'Infirmiers', icon: '👨‍⚕️' },
     { path: '/produits', label: 'Produits', icon: '📦' },
+    { path: '/charges', label: 'Charges', icon: '💸' },
   ];
 
   const handleLogout = () => {

@@ -170,7 +170,7 @@ const EditForm = React.memo(({
         padding: '2rem',
         borderRadius: '8px',
         width: '90%',
-        maxWidth: '800px',
+        maxWidth: '1000px',
         maxHeight: '90vh',
         overflowY: 'auto'
       }}>

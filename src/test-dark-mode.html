@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mode Sombre - OmniDoc</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #1976d2;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .test-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            color: #333;
+        }
+        
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        button:hover {
+            background: #1565c0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f5f7fa;
+            font-weight: bold;
+        }
+        
+        .status {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        /* Mode sombre */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #ffffff;
+            }
+            
+            .test-container {
+                background: #2d2d2d;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            }
+            
+            h1 {
+                color: #1976d2;
+            }
+            
+            .test-section {
+                background: #3d3d3d;
+                border-color: #555;
+            }
+            
+            .test-section h3 {
+                color: #ffffff;
+            }
+            
+            input, select, textarea {
+                background: #3d3d3d;
+                border-color: #555;
+                color: #ffffff;
+            }
+            
+            input:focus, select:focus, textarea:focus {
+                background: #4d4d4d;
+                border-color: #1976d2;
+            }
+            
+            button {
+                background: #1976d2;
+                color: #ffffff;
+            }
+            
+            button:hover {
+                background: #1565c0;
+            }
+            
+            table {
+                background: #2d2d2d;
+            }
+            
+            th {
+                background: #3d3d3d;
+                color: #ffffff;
+                border-bottom-color: #555;
+            }
+            
+            td {
+                color: #ffffff;
+                border-bottom-color: #555;
+            }
+            
+            .status.success {
+                background: #1a4a1a;
+                color: #4caf50;
+                border-color: #2e7d32;
+            }
+            
+            .status.error {
+                background: #4a1a1a;
+                color: #f44336;
+                border-color: #d32f2f;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🌙 Test du Mode Sombre - OmniDoc</h1>
+        
+        <div class="status success">
+            ✅ Si vous voyez ce texte en vert sur fond sombre, le mode sombre fonctionne correctement !
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test des Formulaires</h3>
+            <input type="text" placeholder="Champ de texte" value="Test de saisie">
+            <select>
+                <option>Option 1</option>
+                <option>Option 2</option>
+            </select>
+            <textarea placeholder="Zone de texte">Contenu de test</textarea>
+            <button>Bouton de test</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test des Tableaux</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Colonne 1</th>
+                        <th>Colonne 2</th>
+                        <th>Colonne 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Donnée 1</td>
+                        <td>Donnée 2</td>
+                        <td>Donnée 3</td>
+                    </tr>
+                    <tr>
+                        <td>Donnée 4</td>
+                        <td>Donnée 5</td>
+                        <td>Donnée 6</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="test-section">
+            <h3>🎨 Instructions de Test</h3>
+            <p><strong>Pour tester le mode sombre :</strong></p>
+            <ol>
+                <li>Ouvrez les outils de développement de votre navigateur (F12)</li>
+                <li>Allez dans l'onglet "Console"</li>
+                <li>Tapez : <code>document.documentElement.style.colorScheme = 'dark'</code></li>
+                <li>Ou changez les préférences système de votre ordinateur</li>
+            </ol>
+            
+            <p><strong>Éléments à vérifier :</strong></p>
+            <ul>
+                <li>✅ Arrière-plan sombre (#1a1a1a)</li>
+                <li>✅ Texte blanc (#ffffff)</li>
+                <li>✅ Champs de formulaire avec fond sombre</li>
+                <li>✅ Tableaux avec fond sombre</li>
+                <li>✅ Boutons avec couleurs adaptées</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Détection automatique du mode sombre
+        function detectDarkMode() {
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            console.log('Mode sombre détecté:', isDark);
+            
+            if (isDark) {
+                document.body.style.border = '3px solid #4caf50';
+                document.title = '✅ Mode Sombre Actif - OmniDoc';
+            } else {
+                document.body.style.border = '3px solid #ff9800';
+                document.title = '☀️ Mode Clair Actif - OmniDoc';
+            }
+        }
+        
+        // Vérifier au chargement
+        detectDarkMode();
+        
+        // Écouter les changements
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', detectDarkMode);
+        
+        // Fonction pour forcer le mode sombre (pour test)
+        function forceDarkMode() {
+            document.documentElement.style.colorScheme = 'dark';
+            document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+            console.log('Mode sombre forcé activé');
+        }
+        
+        // Fonction pour désactiver le mode sombre forcé
+        function disableForcedDarkMode() {
+            document.documentElement.style.colorScheme = '';
+            document.body.style.filter = '';
+            console.log('Mode sombre forcé désactivé');
+        }
+        
+        // Ajouter les fonctions à la console pour test
+        window.forceDarkMode = forceDarkMode;
+        window.disableForcedDarkMode = disableForcedDarkMode;
+        
+        console.log('🔧 Fonctions de test disponibles:');
+        console.log('- forceDarkMode() : Force le mode sombre');
+        console.log('- disableForcedDarkMode() : Désactive le mode sombre forcé');
+    </script>
+</body>
+</html>

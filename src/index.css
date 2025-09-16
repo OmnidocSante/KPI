@@ -220,13 +220,104 @@ input, select, textarea, button {
 @media (prefers-color-scheme: dark) {
   :root {
     --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3d3d3d;
     --text-primary: #ffffff;
+    --text-secondary: #e0e0e0;
     --border-color: #555;
+    --border-light: #666;
+    --shadow-color: rgba(0, 0, 0, 0.3);
   }
   
   body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
+  }
+  
+  /* Styles pour les formulaires */
+  input, select, textarea {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    background-color: var(--bg-secondary) !important;
+    border-color: #1976d2 !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Styles pour les boutons */
+  button {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  button:hover {
+    background-color: var(--bg-secondary) !important;
+  }
+  
+  /* Styles pour les tableaux */
+  table {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  th {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+  
+  td {
+    border-bottom-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Styles pour les modales */
+  .modal, [role="dialog"] {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Styles pour les dropdowns */
+  .dropdown-content {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .dropdown-header {
+    background-color: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  /* Styles pour les sections */
+  .form-section, .filters-section, .table-section {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 4px 20px var(--shadow-color) !important;
+  }
+  
+  /* Styles pour les labels */
+  label {
+    color: var(--text-primary) !important;
+  }
+  
+  /* Styles pour les messages d'erreur */
+  .error-message {
+    background-color: #4a1a1a !important;
+    color: #ff6b6b !important;
+    border-color: #ff4444 !important;
+  }
+  
+  /* Styles pour les notifications */
+  .notification {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
   }
 }
 
