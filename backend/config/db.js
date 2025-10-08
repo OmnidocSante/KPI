@@ -11,16 +11,13 @@ const dbConfig = {
   port: 3306,
   dateStrings: true,
   timezone: 'Z',
-  ssl: {
-    ca: fs.readFileSync(path.join(__dirname, 'DigiCertGlobalRootCA.crt.pem'))
-  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
 };
 
 // Création du pool de connexions
-const pool = mysql.createPool(dbConfig);
+const pool = mysql.createPool(dbConfig); 
 
 // Test de la connexion
 pool.getConnection()

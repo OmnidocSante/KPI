@@ -111,9 +111,17 @@ async function generateInstallmentsIfRecurring(chargeId, type, priceType, unitPr
 const listCharges = async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT c.*, cat.name AS categoryName
+      SELECT 
+        c.*,
+        cat.name AS categoryName,
+        v.name AS villeName,
+        a.numberPlate AS ambulancePlate,
+        (SELECT COUNT(*) FROM ChargeInstallments ci WHERE ci.chargeId = c.id AND ci.destroyTime IS NULL) AS totalInstallments,
+        (SELECT COUNT(*) FROM ChargeInstallments ci WHERE ci.chargeId = c.id AND ci.destroyTime IS NULL AND ci.isPaid = 1) AS paidInstallments
       FROM Charges c
       LEFT JOIN ChargeCategories cat ON c.categoryId = cat.id
+      LEFT JOIN Villes v ON c.villeId = v.id
+      LEFT JOIN aumbulances a ON c.ambulanceId = a.id
       WHERE c.destroyTime IS NULL
       ORDER BY c.createdAt DESC
     `);
@@ -146,6 +154,8 @@ const createCharge = async (req, res) => {
     const {
       label,
       categoryId,
+      villeId,
+      ambulanceId,
       type, // 'recurring' | 'variable'
       priceType, // 'monthly' | 'yearly' (si recurring)
       unitPrice, // montant par période si recurring
@@ -154,7 +164,8 @@ const createCharge = async (req, res) => {
       endDate, // optionnel
       amount, // pour variable
       variableDate, // date de la charge variable
-      notes
+      notes,
+      valide // <-- Ajouté
     } = req.body;
 
     if (!label || !type) {
@@ -184,13 +195,20 @@ const createCharge = async (req, res) => {
 
     const now = new Date();
     const [result] = await db.query(
-      `INSERT INTO Charges (label, categoryId, type, priceType, unitPrice, periodCount, startDate, endDate, amount, variableDate, notes, createdAt, updatedAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [label, categoryId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, computedEndDate || null, amount || null, variableDate || null, notes || null, now, now]
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, priceType, unitPrice, periodCount, startDate, endDate, amount, variableDate, notes, createdAt, updatedAt, valide)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [label, categoryId || null, villeId || null, ambulanceId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, computedEndDate || null, amount || null, variableDate || null, notes || null, now, now, (valide === 0 || valide === false) ? 0 : 1]
     );
 
     const chargeId = result.insertId;
     await generateInstallmentsIfRecurring(chargeId, type, priceType, unitPrice, periodCount, startDate);
+    // Pour une charge variable, créer une seule échéance pour permettre le suivi payé/non payé
+    if (type === 'variable' && amount) {
+      await db.query(
+        'INSERT INTO ChargeInstallments (chargeId, dueDate, amount) VALUES (?, ?, ?)',
+        [chargeId, variableDate || null, amount]
+      );
+    }
 
     res.status(201).json({ id: chargeId, endDate: computedEndDate });
   } catch (error) {
@@ -204,6 +222,8 @@ const updateCharge = async (req, res) => {
     const {
       label,
       categoryId,
+      villeId,
+      ambulanceId,
       type,
       priceType,
       unitPrice,
@@ -212,20 +232,27 @@ const updateCharge = async (req, res) => {
       endDate,
       amount,
       notes,
-      variableDate
+      variableDate,
+      valide // <-- Ajouté
     } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      `UPDATE Charges SET label=?, categoryId=?, type=?, priceType=?, unitPrice=?, periodCount=?, startDate=?, endDate=?, amount=?, variableDate=?, notes=?, updatedAt=?
+      `UPDATE Charges SET label=?, categoryId=?, villeId=?, ambulanceId=?, type=?, priceType=?, unitPrice=?, periodCount=?, startDate=?, endDate=?, amount=?, variableDate=?, notes=?, updatedAt=?, valide=?
        WHERE id = ? AND destroyTime IS NULL`,
-      [label, categoryId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, endDate || null, amount || null, variableDate || null, notes || null, now, req.params.id]
+      [label, categoryId || null, villeId || null, ambulanceId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, endDate || null, amount || null, variableDate || null, notes || null, now, (valide === 0 || valide === false) ? 0 : 1, req.params.id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Charge non trouvée' });
 
-    // Régénérer les échéances si recurring
+    // Régénérer les échéances selon le type
     if (type === 'recurring') {
       await db.query('UPDATE ChargeInstallments SET destroyTime = ? WHERE chargeId = ? AND destroyTime IS NULL', [now, req.params.id]);
       await generateInstallmentsIfRecurring(Number(req.params.id), type, priceType, unitPrice, periodCount, startDate);
+    } else if (type === 'variable') {
+      // Pour variable: on garde une seule échéance alignée sur variableDate/amount
+      await db.query('UPDATE ChargeInstallments SET destroyTime = ? WHERE chargeId = ? AND destroyTime IS NULL', [now, req.params.id]);
+      if (amount) {
+        await db.query('INSERT INTO ChargeInstallments (chargeId, dueDate, amount) VALUES (?, ?, ?)', [Number(req.params.id), variableDate || null, amount]);
+      }
     }
 
     res.json({ message: 'Charge mise à jour' });
@@ -266,6 +293,108 @@ const markInstallmentPaid = async (req, res) => {
   }
 };
 
+const markInstallmentUnpaid = async (req, res) => {
+  try {
+    const now = new Date();
+    const [result] = await db.query('UPDATE ChargeInstallments SET isPaid = 0, paidAt = NULL, updatedAt = ? WHERE id = ? AND destroyTime IS NULL', [now, req.params.installmentId]);
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Échéance non trouvée" });
+    res.json({ message: "Échéance marquée non payée" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const autorouteCharge = async (req, res) => {
+  try {
+    const { montant, ville, ambulanceNumber, ambulancierName, date } = req.body;
+    if (!montant || !ville || !ambulanceNumber || !ambulancierName || !date) {
+      return res.status(400).json({ message: 'montant, ville, ambulanceNumber, ambulancierName, date sont requis' });
+    }
+    // Trouver l'id de la ville
+    const [villeRows] = await db.query('SELECT id FROM Villes WHERE name = ? AND destroyTime IS NULL', [ville]);
+    const villeId = villeRows.length > 0 ? villeRows[0].id : null;
+    // Trouver l'id de l'ambulance par numéro interne
+    const [ambRows] = await db.query('SELECT id FROM Aumbulances WHERE number = ? AND destroyTime IS NULL', [ambulanceNumber]);
+    const ambulanceId = ambRows.length > 0 ? ambRows[0].id : null;
+    // Trouver l'id de l'ambulancier par nom (tolérance sur le nom)
+    const [ambcRows] = await db.query('SELECT id FROM Ambulanciers WHERE name LIKE ? AND destroyTime IS NULL', [`%${ambulancierName}%`]);
+    const ambulancierId = ambcRows.length > 0 ? ambcRows[0].id : null;
+    // Créer la charge non valide
+    const now = new Date();
+    const [result] = await db.query(
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes, createdAt, updatedAt, valide)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      [
+        'Autoroute',
+        null,
+        villeId,
+        ambulanceId,
+        'variable',
+        montant,
+        date,
+        `Import autoroute - Ambulancier: ${ambulancierName}`,
+        now,
+        now
+      ]
+    );
+    const chargeId = result.insertId;
+    // Créer une échéance unique avec la date fournie
+    await db.query('INSERT INTO ChargeInstallments (chargeId, dueDate, amount) VALUES (?, ?, ?)', [chargeId, date, montant]);
+    res.status(201).json({
+      id: chargeId,
+      villeId,
+      ambulanceId,
+      ambulancierId,
+      message: (!villeId ? 'Ville non trouvée. ' : '') + (!ambulanceId ? 'Ambulance non trouvée. ' : '') + (!ambulancierId ? 'Ambulancier non trouvé.' : '')
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const carburantCharge = async (req, res) => {
+  try {
+    const { montant, ville, ambulanceNumber, ambulancierName, date } = req.body;
+    if (!montant || !ville || !ambulanceNumber || !ambulancierName || !date) {
+      return res.status(400).json({ message: 'montant, ville, ambulanceNumber, ambulancierName, date sont requis' });
+    }
+    const [villeRows] = await db.query('SELECT id FROM Villes WHERE name = ? AND destroyTime IS NULL', [ville]);
+    const villeId = villeRows.length > 0 ? villeRows[0].id : null;
+    const [ambRows] = await db.query('SELECT id FROM Aumbulances WHERE number = ? AND destroyTime IS NULL', [ambulanceNumber]);
+    const ambulanceId = ambRows.length > 0 ? ambRows[0].id : null;
+    const [ambcRows] = await db.query('SELECT id FROM Ambulanciers WHERE name LIKE ? AND destroyTime IS NULL', [`%${ambulancierName}%`]);
+    const ambulancierId = ambcRows.length > 0 ? ambcRows[0].id : null;
+    const now = new Date();
+    const [result] = await db.query(
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes, createdAt, updatedAt, valide)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      [
+        'Carburant',
+        null,
+        villeId,
+        ambulanceId,
+        'variable',
+        montant,
+        date,
+        `Import carburant - Ambulancier: ${ambulancierName}`,
+        now,
+        now
+      ]
+    );
+    const chargeId = result.insertId;
+    await db.query('INSERT INTO ChargeInstallments (chargeId, dueDate, amount) VALUES (?, ?, ?)', [chargeId, date, montant]);
+    res.status(201).json({
+      id: chargeId,
+      villeId,
+      ambulanceId,
+      ambulancierId,
+      message: (!villeId ? 'Ville non trouvée. ' : '') + (!ambulanceId ? 'Ambulance non trouvée. ' : '') + (!ambulancierId ? 'Ambulancier non trouvé.' : '')
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getCategories,
   createCategory,
@@ -277,7 +406,10 @@ module.exports = {
   updateCharge,
   deleteCharge,
   listInstallments,
-  markInstallmentPaid
+  markInstallmentPaid,
+  markInstallmentUnpaid,
+  autorouteCharge,
+  carburantCharge
 };
 
 

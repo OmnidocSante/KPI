@@ -27,6 +27,7 @@ const getAmbulanceById = async (req, res) => {
 const createAmbulance = async (req, res) => {
   try {
     const { 
+      number, 
       numberPlate, 
       type, 
       dateAcquisition, 
@@ -40,6 +41,7 @@ const createAmbulance = async (req, res) => {
     const now = new Date();
     const [result] = await db.query(
       `INSERT INTO Aumbulances (
+        number, 
         numberPlate, 
         type, 
         dateAcquisition, 
@@ -50,8 +52,9 @@ const createAmbulance = async (req, res) => {
         photosVehicule, 
         createdAt, 
         updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        number, 
         numberPlate, 
         type, 
         dateAcquisition, 
@@ -67,7 +70,8 @@ const createAmbulance = async (req, res) => {
     
     res.status(201).json({ 
       id: result.insertId, 
-      numberPlate, 
+      number, 
+      numberPlate,
       type,
       dateAcquisition,
       montantAchat,
@@ -87,6 +91,7 @@ const createAmbulance = async (req, res) => {
 const updateAmbulance = async (req, res) => {
   try {
     const { 
+      number, 
       numberPlate, 
       type, 
       dateAcquisition, 
@@ -100,6 +105,7 @@ const updateAmbulance = async (req, res) => {
     const now = new Date();
     const [result] = await db.query(
       `UPDATE Aumbulances SET 
+        number = ?, 
         numberPlate = ?, 
         type = ?, 
         dateAcquisition = ?, 
@@ -111,6 +117,7 @@ const updateAmbulance = async (req, res) => {
         updatedAt = ? 
       WHERE id = ? AND destroyTime IS NULL`,
       [
+        number, 
         numberPlate, 
         type, 
         dateAcquisition, 
@@ -130,7 +137,8 @@ const updateAmbulance = async (req, res) => {
     
     res.json({ 
       id: req.params.id, 
-      numberPlate, 
+      number, 
+      numberPlate,
       type,
       dateAcquisition,
       montantAchat,

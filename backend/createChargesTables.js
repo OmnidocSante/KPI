@@ -48,6 +48,10 @@ async function createChargesTables() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
   `);
 
+  await db.query(`
+    ALTER TABLE Charges ADD COLUMN valide TINYINT(1) DEFAULT 1;
+  `).catch(() => {}); // ignore si déjà existant
+
   console.log('Tables Charges créées/mises à jour');
   process.exit(0);
 }

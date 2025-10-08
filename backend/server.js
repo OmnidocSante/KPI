@@ -20,10 +20,12 @@ const medecinRoutes = require('./routes/medecinRoutes');
 const infirmierRoutes = require('./routes/infirmierRoute');
 const produitRoutes = require('./routes/produitRoutes');
 const chargeRoutes = require('./routes/chargeRoutes');
+const ambulancierRoutes = require('./routes/ambulancierRoutes');
 const userRoutes = require('./routes/userRoutes');
 const villeRoutes = require('./routes/villeRoutes');
 const globaleRoutes = require('./routes/globaleRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 
@@ -52,10 +54,12 @@ app.use('/medecins', medecinRoutes);
 app.use('/infirmiers', infirmierRoutes);
 app.use('/produits', produitRoutes);
 app.use('/charges', chargeRoutes);
+app.use('/ambulanciers', ambulancierRoutes);
 app.use('/users', userRoutes);
 app.use('/villes', villeRoutes);
 app.use('/globales', globaleRoutes);
 app.use('/reports', reportRoutes);
+app.use('/invoices', invoiceRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {
