@@ -10,6 +10,8 @@ import Medecins from './pages/Medecins';
 import Produits from './pages/Produits';
 import Infirmiers from './pages/Infirmiers';
 import Charges from './pages/Charges';
+import Ambulanciers from './pages/Ambulanciers';
+import Invoices from './pages/Invoices';
 import './App.css';
 
 function App() {
@@ -53,6 +55,14 @@ function App() {
         <Route 
           path="/charges" 
           element={isAuthenticated ? <Charges /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/factures" 
+          element={isAuthenticated ? <Invoices /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/ambulanciers" 
+          element={isAuthenticated ? <Ambulanciers /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/data" 

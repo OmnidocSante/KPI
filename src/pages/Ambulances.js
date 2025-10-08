@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
-import { fetchAmbulances, createAmbulance, updateAmbulance, deleteAmbulance } from '../services/api';
+import { fetchAmbulances, createAmbulance, updateAmbulance, deleteAmbulance, fetchVilles } from '../services/api';
 
 const Notification = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -26,6 +26,7 @@ const Ambulances = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editAmbulance, setEditAmbulance] = useState(null);
+  const [number, setNumber] = useState('');
   const [numberPlate, setNumberPlate] = useState('');
   const [type, setType] = useState('MAD');
   const [dateAcquisition, setDateAcquisition] = useState('');
@@ -40,6 +41,7 @@ const Ambulances = () => {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
   const [compressing, setCompressing] = useState(false);
+  const [villes, setVilles] = useState([]);
 
   const loadAmbulances = async () => {
     setLoading(true);
@@ -54,10 +56,12 @@ const Ambulances = () => {
 
   useEffect(() => {
     loadAmbulances();
+    fetchVilles().then(res => setVilles(res.data)).catch(() => setVilles([]));
   }, []);
 
   const openAddModal = () => {
     setEditAmbulance(null);
+    setNumber('');
     setNumberPlate('');
     setType('MAD');
     setDateAcquisition('');
@@ -71,6 +75,7 @@ const Ambulances = () => {
 
   const openEditModal = (amb) => {
     setEditAmbulance(amb);
+    setNumber(amb.number || '');
     setNumberPlate(amb.numberPlate);
     setType(amb.type || 'MAD');
     
@@ -180,6 +185,7 @@ const Ambulances = () => {
       const photosString = photosVehicule.join('|||');
       
       const ambulanceData = {
+        number,
         numberPlate,
         type,
         dateAcquisition,
@@ -328,6 +334,7 @@ const Ambulances = () => {
                   <thead>
                     <tr>
                       <th>ID</th>
+                      <th>Numéro</th>
                       <th>Immatriculation</th>
                       <th>Type</th>
                       <th>Date d'acquisition</th>
@@ -341,10 +348,11 @@ const Ambulances = () => {
                   </thead>
                   <tbody>
                     {ambulances.filter(amb => amb.numberPlate.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                      <tr><td colSpan="10">Aucune ambulance trouvée.</td></tr>
+                      <tr><td colSpan="11">Aucune ambulance trouvée.</td></tr>
                     ) : ambulances.filter(amb => amb.numberPlate.toLowerCase().includes(search.toLowerCase())).map(amb => (
                       <tr key={amb.id}>
                         <td>{amb.id}</td>
+                        <td>{amb.number || '-'}</td>
                         <td style={{ fontWeight: '600', color: '#1976d2' }}>{amb.numberPlate}</td>
                         <td>
                           <span style={{
@@ -474,10 +482,19 @@ const Ambulances = () => {
         {/* Modale ajout/modif */}
         {showModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
-            <form onSubmit={handleSave} style={{ background: 'white', padding: 32, borderRadius: 12, minWidth: 500, maxWidth: 600, maxHeight: '90vh', overflowY: 'auto' }}>
+            <form onSubmit={handleSave} style={{ background: 'white', padding: 32, borderRadius: 12, minWidth: 600, maxWidth: 800, maxHeight: '90vh', overflowY: 'auto' }}>
               <h3 style={{ marginBottom: 24, color: '#2c3e50' }}>{editAmbulance ? 'Modifier' : 'Ajouter'} une ambulance</h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label>🔢 Numéro (interne)</label>
+                  <input
+                    type="text"
+                    value={number}
+                    onChange={e => setNumber(e.target.value)}
+                    placeholder="Numérotation interne"
+                  />
+                </div>
                 <div className="form-group">
                   <label>🚗 Numéro d'immatriculation *</label>
                   <input 
@@ -524,12 +541,16 @@ const Ambulances = () => {
 
                 <div className="form-group">
                   <label>🏥 Ville d'activité</label>
-                  <input 
-                    type="text" 
-                    value={villeActivite} 
+                  <select
+                    value={villeActivite}
                     onChange={e => setVilleActivite(e.target.value)}
-                    placeholder="Ex: Casablanca"
-                  />
+                    required
+                  >
+                    <option value="">-- Sélectionner une ville --</option>
+                    {villes.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">

@@ -2,6 +2,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #f5f5f5;
+  overflow-x: hidden;
 }
 
 .main-content {
@@ -9,6 +10,9 @@
   padding: 2rem;
   margin-left: 250px;
   transition: margin-left 0.3s ease;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
 }
 .data-table th {
   text-align: center;
@@ -37,6 +41,7 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  min-width: 0;
 }
 
 /* Styles pour le formulaire */
@@ -146,7 +151,6 @@
   grid-column: 2/3;
   justify-self: end;
   align-self: end;
-  margin-top: 0.5rem;
   background: linear-gradient(90deg, #1976d2 60%, #00d8ff 100%);
   color: #fff;
   font-weight: bold;
@@ -200,6 +204,14 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.2rem;
+}
+
+/* Bouton Ajouter aligné à droite, dans le flux */
+.table-header > button {
+  position: static;
+  right: auto;
+  margin-left: auto;
+  z-index: 1;
 }
 
 .table-title {
@@ -262,30 +274,50 @@
 .table-container {
   margin-top: 0.5rem;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto; /* Empêche la table de sortir de l'écran */
+  overflow-y: hidden;
   box-shadow: 0 1px 4px #0001;
+  width: 100%;
 }
 
 .data-table {
   width: 100%;
+  min-width: 900px; /* largeur mini plus souple quand la sidebar est large */
   border-collapse: separate;
   border-spacing: 0;
   background: #fff;
+  table-layout: fixed; /* force une répartition des colonnes et limite les débordements */
 }
 
 .data-table th {
+  position: sticky; /* En-tête collant pour lisibilité */
+  top: 0;
+  z-index: 2;
   background: #f5f7fa;
   color: #222;
   font-weight: bold;
-  padding: 0.9rem 0.5rem;
+  padding: 0.8rem 0.5rem;
   text-align: center;
   font-size: 1.05rem;
 }
 
 .data-table td {
-  padding: 0.7rem 0.5rem;
+  padding: 0.65rem 0.5rem;
   border-bottom: 1px solid #f0f0f0;
   font-size: 1rem;
+}
+
+.data-table th,
+.data-table td {
+  word-break: break-word;
+}
+
+/* Effets visuels lignes */
+.data-table tbody tr:nth-child(even) {
+  background: #fafcff;
+}
+.data-table tbody tr:hover {
+  background: #f3f8ff;
 }
 
 .no-result-row {

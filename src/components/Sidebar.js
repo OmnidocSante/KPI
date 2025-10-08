@@ -17,8 +17,10 @@ const Sidebar = () => {
     { path: '/clients', label: 'Clients', icon: '👥' },
     { path: '/medecins', label: 'Médecins', icon: '🩺' },
     { path: '/infirmiers', label: 'Infirmiers', icon: '👨‍⚕️' },
+    { path: '/ambulanciers', label: 'Ambulanciers', icon: '🚑' },
     { path: '/produits', label: 'Produits', icon: '📦' },
     { path: '/charges', label: 'Charges', icon: '💸' },
+    { path: '/factures', label: 'Factures', icon: '📥' },
   ];
 
   const handleLogout = () => {

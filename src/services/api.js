@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://kpi.omnidoc.ma/api'
+const API_URL = 'http://localhost:4301'
 
 // Configuration d'axios
 const api = axios.create({
@@ -56,6 +56,22 @@ export const createAmbulance = (data) => api.post('/ambulances', data);
 export const updateAmbulance = (id, data) => api.put(`/ambulances/${id}`, data);
 export const deleteAmbulance = (id) => api.delete(`/ambulances/${id}`);
 
+// Fonctions pour l'API Ambulanciers
+export const fetchAmbulanciers = () => api.get('/ambulanciers');
+export const fetchAmbulancierById = (id) => api.get(`/ambulanciers/${id}`);
+export const createAmbulancier = (data) => api.post('/ambulanciers', data);
+export const updateAmbulancier = (id, data) => api.put(`/ambulanciers/${id}`, data);
+export const deleteAmbulancier = (id) => api.delete(`/ambulanciers/${id}`);
+
+// Factures (réception)
+export const fetchInvoices = () => api.get('/invoices');
+export const fetchPaidInvoices = () => api.get('/invoices/paid');
+export const createInvoice = (data) => api.post('/invoices', data);
+export const payInvoice = (id) => api.patch(`/invoices/${id}/pay`);
+export const deleteInvoice = (id) => api.delete(`/invoices/${id}`);
+export const unpayInvoice = (id) => api.patch(`/invoices/${id}/unpay`);
+
+
 // Fonctions pour l'API Clients
 export const fetchClients = () => api.get('/clients');
 export const fetchClientById = (id) => api.get(`/clients/${id}`);
@@ -107,6 +123,7 @@ export const updateCharge = (id, data) => api.put(`/charges/${id}`, data);
 export const deleteCharge = (id) => api.delete(`/charges/${id}`);
 export const fetchChargeInstallments = (chargeId) => api.get(`/charges/${chargeId}/installments`);
 export const payChargeInstallment = (installmentId) => api.patch(`/charges/installments/${installmentId}/pay`);
+export const unpayChargeInstallment = (installmentId) => api.patch(`/charges/installments/${installmentId}/unpay`);
 
 // Rapports
 export const fetchProfitReport = ({ start, end, paidOnly } = {}) => {
@@ -117,7 +134,8 @@ export const fetchProfitReport = ({ start, end, paidOnly } = {}) => {
   return api.get(`/reports/profit?${params.toString()}`);
 };
 
-
+export const autorouteCharge = (data) => api.post('/charges/autoroute', data);
+export const carburantCharge = (data) => api.post('/charges/carburant', data);
 
 export { getNom };
 
