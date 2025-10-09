@@ -363,73 +363,64 @@ const Clients = () => {
                           )}
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center', flexWrap: 'nowrap' }}>
                             <button
                               onClick={() => openEditModal(client)}
+                              title="Modifier"
                               style={{
-                                background: '#f8fafc',
-                                color: '#1976d2',
-                                border: '1.5px solid #1976d2',
-                                borderRadius: '6px',
-                                padding: '6px 12px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e8f1fe',
+                                color: '#0b63c5',
+                                border: '1.5px solid #90caf9',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
                               }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.background = '#1976d2';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.background = '#f8fafc';
-                                e.currentTarget.style.color = '#1976d2';
-                              }}
-                            >Modifier</button>
+                            >✏️</button>
                             <button
                               onClick={() => openContactsModal(client)}
+                              title="Contacts"
                               style={{
-                                background: '#f8fafc',
-                                color: '#28a745',
-                                border: '1.5px solid #28a745',
-                                borderRadius: '6px',
-                                padding: '6px 12px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e9f7ef',
+                                color: '#1b8f3a',
+                                border: '1.5px solid #a7e3bd',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
                               }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.background = '#28a745';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.background = '#f8fafc';
-                                e.currentTarget.style.color = '#28a745';
-                              }}
-                            >Contacts</button>
+                            >👥</button>
                             <button
                               onClick={() => setDeleteId(client.id)}
+                              title="Supprimer"
                               style={{
-                                background: '#fff5f5',
-                                color: '#dc2626',
-                                border: '1.5px solid #dc2626',
-                                borderRadius: '6px',
-                                padding: '6px 12px',
-                                cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#fdecec',
+                                color: '#c62828',
+                                border: '1.5px solid #f4b4b4',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
                               }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.background = '#dc2626';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.background = '#fff5f5';
-                                e.currentTarget.style.color = '#dc2626';
-                              }}
-                            >Supprimer</button>
+                            >🗑️</button>
                           </div>
                         </td>
                       </tr>

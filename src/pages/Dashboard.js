@@ -1841,38 +1841,56 @@ const Dashboard = () => {
                       <td>{formatDateFr(item.dateCreation)}</td>
                       <td>{item.etatdePaiment}</td>
                       <td>
-                        <div style={{display:'flex', gap:'0.5rem', justifyContent:'center'}}>
+                        <div style={{display:'flex', gap:'8px', justifyContent:'center', alignItems:'center', flexWrap:'nowrap'}}>
                           <button 
                             onClick={() => handleEdit(item)}
+                            title="Modifier"
                             style={{
-                              padding:'0.3rem 0.6rem',
-                              background:'#1976d2',
-                              color:'white',
-                              border:'none',
-                              borderRadius:'4px',
-                              cursor:'pointer',
-                              display:'flex',
-                              alignItems:'center',
-                              gap:'0.3rem'
+                              width: 32,
+                              height: 32,
+                              minWidth: 32,
+                              minHeight: 32,
+                              boxSizing: 'border-box',
+                              lineHeight: '32px',
+                              padding: 0,
+                              borderRadius: '50%',
+                              background: '#e8f1fe',
+                              color: '#0b63c5',
+                              border: '1.5px solid #90caf9',
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              cursor: 'pointer', 
+                              fontSize: '16px', 
+                              fontWeight: 600
                             }}
                           >
-                            <span role="img" aria-label="edit">Edit</span>
+                            ✏️
                           </button>
                           <button 
                             onClick={() => handleDelete(item.id)}
+                            title="Supprimer"
                             style={{
-                              padding:'0.3rem 0.6rem',
-                              background:'#d32f2f',
-                              color:'white',
-                              border:'none',
-                              borderRadius:'4px',
-                              cursor:'pointer',
-                              display:'flex',
-                              alignItems:'center',
-                              gap:'0.3rem'
+                              width: 32,
+                              height: 32,
+                              minWidth: 32,
+                              minHeight: 32,
+                              boxSizing: 'border-box',
+                              lineHeight: '32px',
+                              padding: 0,
+                              borderRadius: '50%',
+                              background: '#fdecec',
+                              color: '#c62828',
+                              border: '1.5px solid #f4b4b4',
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              cursor: 'pointer', 
+                              fontSize: '16px', 
+                              fontWeight: 600
                             }}
                           >
-                            <span role="img" aria-label="delete">Delete</span>
+                            🗑️
                           </button>
                         </div>
                       </td>

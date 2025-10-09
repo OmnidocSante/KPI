@@ -12,6 +12,7 @@ import Infirmiers from './pages/Infirmiers';
 import Charges from './pages/Charges';
 import Ambulanciers from './pages/Ambulanciers';
 import Invoices from './pages/Invoices';
+import Fournisseurs from './pages/Fournisseurs';
 import './App.css';
 
 function App() {
@@ -59,6 +60,10 @@ function App() {
         <Route 
           path="/factures" 
           element={isAuthenticated ? <Invoices /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/fournisseurs" 
+          element={isAuthenticated ? <Fournisseurs /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/ambulanciers" 

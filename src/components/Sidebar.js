@@ -19,6 +19,7 @@ const Sidebar = () => {
     { path: '/infirmiers', label: 'Infirmiers', icon: '👨‍⚕️' },
     { path: '/ambulanciers', label: 'Ambulanciers', icon: '🚑' },
     { path: '/produits', label: 'Produits', icon: '📦' },
+    { path: '/fournisseurs', label: 'Fournisseurs', icon: '🏭' },
     { path: '/charges', label: 'Charges', icon: '💸' },
     { path: '/factures', label: 'Factures', icon: '📥' },
   ];

@@ -1807,3 +1807,42 @@
     min-width: 90px;
   }
 }
+
+/* Colonne ID compacte (première colonne des tableaux) */
+.data-table th:first-child,
+.data-table td:first-child {
+  width: 64px;
+  max-width: 64px;
+  min-width: 48px;
+  padding-left: 6px;
+  padding-right: 6px;
+  text-align: center;
+}
+
+/* Tables génériques: évite le débordement par ellipsis */
+.data-table th,
+.data-table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Largeurs pour Ambulanciers/Fournisseurs/Produits */
+/* Nom */
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) { max-width: 220px; }
+/* Téléphone */
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) { width: 130px; max-width: 140px; }
+/* Email */
+.data-table th:nth-child(3),
+.data-table td:nth-child(3) { max-width: 220px; }
+/* Adresse */
+.data-table th:nth-child(4),
+.data-table td:nth-child(4) { max-width: 260px; }
+/* Ville */
+.data-table th:nth-child(5),
+.data-table td:nth-child(5) { width: 150px; max-width: 160px; }
+/* Actions (dernier) */
+.data-table th:last-child,
+.data-table td:last-child { width: 160px; max-width: 180px; text-align: center; }

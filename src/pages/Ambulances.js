@@ -423,51 +423,37 @@ const Ambulances = () => {
                           )}
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'nowrap' }}>
                             <button
                               onClick={() => openEditModal(amb)}
+                              title="Modifier"
                               style={{
-                                background: '#f8fafc',
-                                color: '#1976d2',
+                                width: 32,
+                                height: 32,
+                                background: '#e8f1fe',
+                                color: '#0b63c5',
                                 border: '1.5px solid #1976d2',
-                                borderRadius: '6px',
-                                padding: '6px 12px',
+                                borderRadius: '50%',
+                                padding: 0,
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                               }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.background = '#1976d2';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.background = '#f8fafc';
-                                e.currentTarget.style.color = '#1976d2';
-                              }}
-                            >Modifier</button>
+                            >✏️</button>
                             <button
                               onClick={() => setDeleteId(amb.id)}
+                              title="Supprimer"
                               style={{
+                                width: 32,
+                                height: 32,
                                 background: '#fff5f5',
                                 color: '#dc2626',
                                 border: '1.5px solid #dc2626',
-                                borderRadius: '6px',
-                                padding: '6px 12px',
+                                borderRadius: '50%',
+                                padding: 0,
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
-                                fontWeight: '600',
-                                transition: 'all 0.2s ease'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
                               }}
-                              onMouseOver={e => {
-                                e.currentTarget.style.background = '#dc2626';
-                                e.currentTarget.style.color = 'white';
-                              }}
-                              onMouseOut={e => {
-                                e.currentTarget.style.background = '#fff5f5';
-                                e.currentTarget.style.color = '#dc2626';
-                              }}
-                            >Supprimer</button>
+                            >🗑️</button>
                           </div>
                         </td>
                       </tr>

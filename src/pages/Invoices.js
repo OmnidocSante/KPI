@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
-import { fetchInvoices, fetchPaidInvoices, createInvoice, payInvoice, deleteInvoice, unpayInvoice } from '../services/api';
+import { fetchInvoices, fetchPaidInvoices, createInvoice, updateInvoice, payInvoice, deleteInvoice, unpayInvoice, fetchFournisseurs } from '../services/api';
 
 const badge = (days) => {
   if (days === 3 || days === 2 || days === 1) {
@@ -17,8 +17,10 @@ const Invoices = () => {
   const [paid, setPaid] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingInvoice, setEditingInvoice] = useState(null);
   const [form, setForm] = useState({ number: '', supplier: '', amount: '', invoiceDate: '', terms: 60 });
   const [notification, setNotification] = useState({ message: '', type: '' });
+  const [fournisseurs, setFournisseurs] = useState([]);
 
   const load = async () => {
     setLoading(true);
@@ -32,11 +34,67 @@ const Invoices = () => {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  const loadFournisseurs = async () => {
+    try {
+      const res = await fetchFournisseurs();
+      setFournisseurs(res.data);
+    } catch (e) {
+      console.error('Erreur lors du chargement des fournisseurs', e);
+    }
+  };
+
+  useEffect(() => { 
+    load(); 
+    loadFournisseurs();
+  }, []);
+
+  // Vérifier les factures urgentes et afficher des notifications
+  useEffect(() => {
+    if (items.length === 0) return;
+    
+    const urgentInvoices = items.filter(i => {
+      const days = Number(i.daysLeft);
+      return days <= 3 && days >= 0;
+    });
+
+    const overdueInvoices = items.filter(i => Number(i.daysLeft) < 0);
+
+    if (overdueInvoices.length > 0) {
+      setNotification({
+        message: `⚠️ Attention ! ${overdueInvoices.length} facture(s) en retard de paiement`,
+        type: 'error'
+      });
+    } else if (urgentInvoices.length > 0) {
+      const mostUrgent = urgentInvoices[0];
+      const days = Number(mostUrgent.daysLeft);
+      setNotification({
+        message: `⏰ Facture ${mostUrgent.number} - ${days === 0 ? "À payer aujourd'hui" : `${days} jour(s) restant(s)`}`,
+        type: 'error'
+      });
+    }
+  }, [items]);
 
   const sorted = useMemo(() => {
     return [...items].sort((x, y) => (x.daysLeft ?? 0) - (y.daysLeft ?? 0));
   }, [items]);
+
+  const openAddModal = () => {
+    setEditingInvoice(null);
+    setForm({ number: '', supplier: '', amount: '', invoiceDate: '', terms: 60 });
+    setShowModal(true);
+  };
+
+  const openEditModal = (invoice) => {
+    setEditingInvoice(invoice);
+    setForm({
+      number: invoice.number || '',
+      supplier: invoice.supplier || '',
+      amount: invoice.amount || '',
+      invoiceDate: invoice.invoiceDate || '',
+      terms: invoice.terms || 60
+    });
+    setShowModal(true);
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -48,13 +106,21 @@ const Invoices = () => {
         invoiceDate: form.invoiceDate,
         terms: Number(form.terms)
       };
-      await createInvoice(payload);
+      
+      if (editingInvoice) {
+        await updateInvoice(editingInvoice.id, payload);
+        setNotification({ message: 'Facture modifiée', type: 'success' });
+      } else {
+        await createInvoice(payload);
+        setNotification({ message: 'Facture ajoutée', type: 'success' });
+      }
+      
       setShowModal(false);
+      setEditingInvoice(null);
       setForm({ number: '', supplier: '', amount: '', invoiceDate: '', terms: 60 });
       await load();
-      setNotification({ message: 'Facture ajoutée', type: 'success' });
     } catch (e) {
-      setNotification({ message: "Erreur lors de l'ajout", type: 'error' });
+      setNotification({ message: editingInvoice ? "Erreur lors de la modification" : "Erreur lors de l'ajout", type: 'error' });
     }
   };
 
@@ -74,6 +140,44 @@ const Invoices = () => {
     <div className="dashboard-layout">
       <Sidebar />
       <main className="main-content">
+        {notification.message && (
+          <div style={{
+            position: 'fixed',
+            top: 20,
+            right: 20,
+            minWidth: 320,
+            maxWidth: '90vw',
+            padding: '1rem 1.5rem',
+            borderRadius: 8,
+            background: notification.type === 'success' ? '#4caf50' : '#f44336',
+            color: 'white',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            <span style={{ flex: 1 }}>{notification.message}</span>
+            <button
+              onClick={() => setNotification({ message: '', type: '' })}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '1.2rem',
+                fontWeight: 'bold',
+                padding: 0,
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >×</button>
+          </div>
+        )}
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '1rem' }}>
@@ -81,7 +185,7 @@ const Invoices = () => {
                 <h2 style={{ margin:0, fontSize:'1.25rem', color:'#2c3e50' }}>📥 Réception des factures
                   <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{sorted.length}</span>
                 </h2>
-                <button onClick={() => setShowModal(true)} style={{ marginLeft:'auto', background:'linear-gradient(45deg, #1976d2, #2196f3)', color:'#fff', border:'none', height:34, padding:'0 12px', borderRadius:6, fontWeight:600, cursor:'pointer' }}>+ Ajouter</button>
+                <button onClick={openAddModal} style={{ marginLeft:'auto', background:'linear-gradient(45deg, #1976d2, #2196f3)', color:'#fff', border:'none', height:34, padding:'0 12px', borderRadius:6, fontWeight:600, cursor:'pointer',width:'10%' }}>+ Ajouter</button>
               </div>
             </div>
 
@@ -113,9 +217,64 @@ const Invoices = () => {
                         <td>{badge(Number(i.daysLeft))}</td>
                         <td>{i.amount}</td>
                         <td>
-                          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-                            <button onClick={() => markPaidClick(i.id)} className="submit-btn" style={{ background:'#28a745' }}> payée</button>
-                            <button onClick={() => deleteClick(i.id)} style={{ background:'#dc2626', color:'#fff', border:'none', borderRadius:8, padding:'6px 10px', fontWeight:600, cursor:'pointer' }}>Supprimer</button>
+                          <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap' }}>
+                            <button
+                              onClick={() => openEditModal(i)}
+                              title="Modifier"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e8f1fe',
+                                color: '#0b63c5',
+                                border: '1.5px solid #90caf9',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
+                              }}
+                            >✏️</button>
+                            <button
+                              onClick={() => markPaidClick(i.id)}
+                              title="Marquer payée"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e9f7ef',
+                                color: '#1b8f3a',
+                                border: '1px solid #a7e3bd',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
+                              }}
+                            >✔️</button>
+                            <button
+                              onClick={() => deleteClick(i.id)}
+                              title="Supprimer"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#fdecec',
+                                color: '#c62828',
+                                border: '1px solid #f4b4b4',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize: '16px', fontWeight: 600
+                              }}
+                            >🗑️</button>
                           </div>
                         </td>
                       </tr>
@@ -155,8 +314,24 @@ const Invoices = () => {
                       <td>{p.paidAt?.slice(0,10) || '-'}</td>
                       <td>{p.amount}</td>
                       <td>
-                        <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-                          <button onClick={() => markUnpaidClick(p.id)} className="submit-btn" style={{ background:'#f44336', color:'#fff', border:'none', borderRadius:8, padding:'6px 10px', fontWeight:600, cursor:'pointer', minWidth:90 }}>Non payée</button>
+                        <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap' }}>
+                          <button
+                            onClick={() => markUnpaidClick(p.id)}
+                            title="Marquer non payée"
+                            style={{
+                              width: 32,
+                              height: 32,
+                              background: '#e9f7ef',
+                              color: '#1b8f3a',
+                              border: '1px solid #a7e3bd',
+                              borderRadius: '999px',
+                              padding: 0,
+                              cursor: 'pointer',
+                              fontSize: '16px',
+                              fontWeight: 600,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                          >↩️</button>
                         </div>
                       </td>
                     </tr>
@@ -170,11 +345,19 @@ const Invoices = () => {
         {showModal && (
           <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:2000, padding:'1rem' }}>
             <div style={{ background:'#fff', padding:'1.5rem', borderRadius:12, width:'100%', maxWidth:600 }}>
-              <h3 style={{ marginTop:0 }}>Ajouter une facture</h3>
+              <h3 style={{ marginTop:0 }}>{editingInvoice ? 'Modifier la facture' : 'Ajouter une facture'}</h3>
               <form onSubmit={submit}>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:12 }}>
                   <div className="form-group"><label>N°</label><input value={form.number} onChange={e=>setForm({ ...form, number:e.target.value })} required /></div>
-                  <div className="form-group"><label>Fournisseur</label><input value={form.supplier} onChange={e=>setForm({ ...form, supplier:e.target.value })} /></div>
+                  <div className="form-group">
+                    <label>Fournisseur</label>
+                    <select value={form.supplier} onChange={e=>setForm({ ...form, supplier:e.target.value })}>
+                      <option value="">-- Sélectionner --</option>
+                      {fournisseurs.map(f => (
+                        <option key={f.id} value={f.name}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="form-group"><label>Montant</label><input type="number" step="0.01" value={form.amount} onChange={e=>setForm({ ...form, amount:e.target.value })} required /></div>
                   <div className="form-group"><label>Date facture</label><input type="date" value={form.invoiceDate} onChange={e=>setForm({ ...form, invoiceDate:e.target.value })} required /></div>
                   <div className="form-group"><label>Conditions</label>
@@ -185,8 +368,8 @@ const Invoices = () => {
                   </div>
                 </div>
                 <div style={{ display:'flex', gap:12, justifyContent:'flex-end', marginTop:16 }}>
-                  <button type="button" onClick={()=>setShowModal(false)} style={{ background:'#e2e8f0', border:'none', borderRadius:8, padding:'8px 12px', fontWeight:600, cursor:'pointer' }}>Annuler</button>
-                  <button type="submit" className="submit-btn" style={{ background:'#1976d2', color:'#fff' }}>Ajouter</button>
+                  <button type="button" onClick={()=>{setShowModal(false); setEditingInvoice(null);}} style={{ background:'#e2e8f0', border:'none', borderRadius:8, padding:'8px 12px', fontWeight:600, cursor:'pointer' }}>Annuler</button>
+                  <button type="submit" className="submit-btn" style={{ background:'#1976d2', color:'#fff' }}>{editingInvoice ? 'Modifier' : 'Ajouter'}</button>
                 </div>
               </form>
             </div>

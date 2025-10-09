@@ -18,7 +18,10 @@ import {
   fetchAmbulanciers,
   unpayChargeInstallment,
   autorouteCharge,
-  carburantCharge
+  carburantCharge,
+  fetchFournisseurs,
+  validateCharge,
+  invalidateCharge
 } from '../services/api';
 
 const Notification = ({ message, type, onClose }) => {
@@ -53,10 +56,16 @@ const Charges = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterCategoryId, setFilterCategoryId] = useState('');
-  const [filterType, setFilterType] = useState('');
-  const [filterVilleId, setFilterVilleId] = useState('');
-  const [filterPaid, setFilterPaid] = useState('');
+  const [filterCategoryIds, setFilterCategoryIds] = useState([]);
+  const [filterTypes, setFilterTypes] = useState([]);
+  const [filterVilleIds, setFilterVilleIds] = useState([]);
+  const [filterPaidStatuses, setFilterPaidStatuses] = useState([]);
+  const [filterFournisseurIds, setFilterFournisseurIds] = useState([]);
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showTypeFilter, setShowTypeFilter] = useState(false);
+  const [showVilleFilter, setShowVilleFilter] = useState(false);
+  const [showPaidFilter, setShowPaidFilter] = useState(false);
+  const [showFournisseurFilter, setShowFournisseurFilter] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editChargeItem, setEditChargeItem] = useState(null);
@@ -72,7 +81,9 @@ const Charges = () => {
     endDate: '',
     amount: '',
     variableDate: '',
-    notes: ''
+    notes: '',
+    fournisseurId: '',
+    invoicePeriod: ''
   });
 
   const [deleteId, setDeleteId] = useState(null);
@@ -86,6 +97,8 @@ const Charges = () => {
   const [medecins, setMedecins] = useState([]);
   const [infirmiers, setInfirmiers] = useState([]);
   const [ambulanciers, setAmbulanciers] = useState([]);
+  const [fournisseurs, setFournisseurs] = useState([]);
+  const [fournisseurSearch, setFournisseurSearch] = useState('');
 
   const [showAutorouteModal, setShowAutorouteModal] = useState(false);
   const [importMode, setImportMode] = useState('autoroute'); // 'autoroute' | 'carburant'
@@ -157,6 +170,15 @@ const Charges = () => {
     }
   };
 
+  const loadFournisseurs = async () => {
+    try {
+      const res = await fetchFournisseurs();
+      setFournisseurs(res.data);
+    } catch (e) {
+      setNotification({ message: 'Erreur lors du chargement des fournisseurs', type: 'error' });
+    }
+  };
+
   useEffect(() => {
     loadCategories();
     loadVilles();
@@ -164,13 +186,29 @@ const Charges = () => {
     loadMedecins();
     loadInfirmiers();
     loadAmbulanciersList();
+    loadFournisseurs();
     loadCharges();
+  }, []);
+
+  // Fermer les dropdowns quand on clique ailleurs
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('[data-filter-dropdown]')) {
+        setShowCategoryFilter(false);
+        setShowTypeFilter(false);
+        setShowVilleFilter(false);
+        setShowPaidFilter(false);
+        setShowFournisseurFilter(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
   const openAddModal = () => {
     setEditChargeItem(null);
     setForm({
-      label: '', categoryId: '', villeId: '', ambulanceId: '', medecinId: '', staffType: '', infirmierId: '', ambulancierId: '', type: 'variable', priceType: 'monthly', unitPrice: '', periodCount: '', startDate: '', endDate: '', amount: '', variableDate: '', notes: ''
+      label: '', categoryId: '', villeId: '', ambulanceId: '', medecinId: '', staffType: '', infirmierId: '', ambulancierId: '', fournisseurId: '', type: 'variable', priceType: 'monthly', unitPrice: '', periodCount: '', startDate: '', endDate: '', amount: '', variableDate: '', notes: '', invoicePeriod: ''
     });
     setShowModal(true);
   };
@@ -183,6 +221,7 @@ const Charges = () => {
       villeId: charge.villeId || '',
       ambulanceId: charge.ambulanceId || '',
       medecinId: charge.medecinId || '',
+      fournisseurId: charge.fournisseurId || '',
       type: charge.type || 'recurring',
       priceType: charge.priceType || 'monthly',
       unitPrice: charge.unitPrice || '',
@@ -191,7 +230,8 @@ const Charges = () => {
       endDate: toYMD(charge.endDate),
       amount: charge.amount || '',
       variableDate: toYMD(charge.variableDate),
-      notes: charge.notes || ''
+      notes: charge.notes || '',
+      invoicePeriod: charge.invoicePeriod || ''
     });
     setShowModal(true);
   };
@@ -219,7 +259,6 @@ const Charges = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      // Concaténer l'info Masse salariale dans les notes si applicable
       const selectedCategory = categories.find(c => String(c.id) === String(form.categoryId));
       const categoryName = (selectedCategory?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const isMasseSalariale = categoryName.includes('masse') && categoryName.includes('salariale');
@@ -238,9 +277,12 @@ const Charges = () => {
         const tag = staffLabel ? `[Masse salariale: ${staffLabel}]` : '[Masse salariale]';
         combinedNotes = combinedNotes ? `${combinedNotes} ${tag}` : tag;
       }
+      const selectedFournisseur = fournisseurs.find(f => String(f.id) === String(form.fournisseurId));
+      const fournisseurName = selectedFournisseur?.name || form.label || '';
       const payload = form.type === 'recurring'
         ? {
-            label: form.label,
+            label: fournisseurName,
+            fournisseurId: form.fournisseurId || null,
             categoryId: form.categoryId || null,
             ambulanceId: form.ambulanceId || null,
             villeId: form.villeId || null,
@@ -252,10 +294,12 @@ const Charges = () => {
             startDate: form.startDate || null,
             endDate: form.endDate || null,
             notes: combinedNotes || null,
-            valide: 1
+            valide: 1,
+            invoicePeriod: form.invoicePeriod || null
           }
         : {
-            label: form.label,
+            label: fournisseurName,
+            fournisseurId: form.fournisseurId || null,
             categoryId: form.categoryId || null,
             ambulanceId: form.ambulanceId || null,
             villeId: form.villeId || null,
@@ -264,7 +308,8 @@ const Charges = () => {
             amount: parseFloat(form.amount || '0') || 0,
             variableDate: form.variableDate || null,
             notes: combinedNotes || null,
-            valide: 1
+            valide: 1,
+            invoicePeriod: form.invoicePeriod || null
           };
 
       if (editChargeItem) {
@@ -290,6 +335,26 @@ const Charges = () => {
       loadCharges();
     } catch (e) {
       setNotification({ message: 'Erreur lors de la suppression', type: 'error' });
+    }
+  };
+
+  const handleValidate = async (id) => {
+    try {
+      await validateCharge(id);
+      setNotification({ message: 'Charge validée', type: 'success' });
+      loadCharges();
+    } catch (e) {
+      setNotification({ message: 'Erreur lors de la validation', type: 'error' });
+    }
+  };
+
+  const handleInvalidate = async (id) => {
+    try {
+      await invalidateCharge(id);
+      setNotification({ message: 'Charge passée en non valide', type: 'success' });
+      loadCharges();
+    } catch (e) {
+      setNotification({ message: 'Erreur lors du passage en non valide', type: 'error' });
     }
   };
 
@@ -334,18 +399,54 @@ const Charges = () => {
   const filteredCharges = useMemo(() => {
     const s = (search || '').toLowerCase();
     return charges
-      .filter(c => !filterCategoryId || String(c.categoryId) === String(filterCategoryId))
-      .filter(c => !filterType || c.type === filterType)
-      .filter(c => !filterVilleId || String(c.villeId) === String(filterVilleId))
       .filter(c => {
-        if (!filterPaid) return true;
+        if (filterCategoryIds.length === 0) return true;
+        return filterCategoryIds.includes(String(c.categoryId));
+      })
+      .filter(c => {
+        if (filterTypes.length === 0) return true;
+        return filterTypes.includes(c.type);
+      })
+      .filter(c => {
+        if (filterVilleIds.length === 0) return true;
+        return filterVilleIds.includes(String(c.villeId));
+      })
+      .filter(c => {
+        if (filterFournisseurIds.length === 0) return true;
+        return filterFournisseurIds.includes(String(c.fournisseurId));
+      })
+      .filter(c => {
+        if (filterPaidStatuses.length === 0) return true;
         const total = Number(c.totalInstallments || 0);
         const paid = Number(c.paidInstallments || 0);
         const isPaid = total > 0 && paid >= total;
-        return filterPaid === 'paid' ? isPaid : !isPaid;
+        return filterPaidStatuses.some(status => 
+          status === 'paid' ? isPaid : !isPaid
+        );
       })
-      .filter(c => (c.label || '').toLowerCase().includes(s) || (c.categoryName || '').toLowerCase().includes(s) || (c.villeName || '').toLowerCase().includes(s));
-  }, [charges, search, filterCategoryId, filterType, filterVilleId, filterPaid]);
+      .filter(c => {
+        if (!s) return true;
+        const searchableText = [
+          c.id,
+          c.label,
+          c.fournisseurName,
+          c.categoryName,
+          c.ambulancePlate,
+          c.villeName,
+          c.type,
+          c.priceType,
+          c.unitPrice,
+          c.periodCount,
+          c.amount,
+          c.notes,
+          c.invoicePeriod,
+          formatFr(c.startDate),
+          formatFr(c.endDate),
+          formatFr(c.variableDate)
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchableText.includes(s);
+      });
+  }, [charges, search, filterCategoryIds, filterTypes, filterVilleIds, filterFournisseurIds, filterPaidStatuses]);
 
   return (
     <div className="dashboard-layout">
@@ -358,19 +459,18 @@ const Charges = () => {
                 <h2 style={{ fontSize: '1.25rem', color: '#2c3e50', margin: 0, whiteSpace:'nowrap' }}>💸 Liste des charges
                   <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{filteredCharges.length}</span>
                 </h2>
-                <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flex:1 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flex:1, flexWrap:'wrap' }}>
                   <div style={{
-                    flex: '2 1 550',
                     position: 'relative',
                     background:'#f8fafc',
                     border:'1px solid #e3e6f0',
                     borderRadius:6,
                     height: 34,
-                    width: '230px'
+                    width: 220
                   }}>
                     <input
                       type="text"
-                      placeholder="Rechercher une charge..."
+                      placeholder="Rechercher..."
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       style={{
@@ -379,49 +479,405 @@ const Charges = () => {
                         border: 'none',
                         outline:'none',
                         background:'transparent',
-                        width:'100%'
+                        width:'100%',
+                        fontSize: '0.9rem'
                       }}
                     />
                     <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', fontSize:14 }}>🔍</span>
                   </div>
-                  <select
-                    value={filterCategoryId}
-                    onChange={e => setFilterCategoryId(e.target.value)}
-                    style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 160 }}
-                  >
-                    <option value="">Toutes catégories</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={filterVilleId}
-                    onChange={e => setFilterVilleId(e.target.value)}
-                    style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 160 }}
-                  >
-                    <option value="">Toutes villes</option>
-                    {villes.map(v => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
-                    ))}
-                  </select>
-                  <select
-                    value={filterType}
-                    onChange={e => setFilterType(e.target.value)}
-                    style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 130 }}
-                  >
-                    <option value="">Tous types</option>
-                    <option value="recurring">Récurrente</option>
-                    <option value="variable">Variable</option>
-                  </select>
-                  <select
-                    value={filterPaid}
-                    onChange={e => setFilterPaid(e.target.value)}
-                    style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 150 }}
-                  >
-                    <option value="">Tous statuts</option>
-                    <option value="paid">Payée</option>
-                    <option value="unpaid">Non payée</option>
-                  </select>
+
+                  {/* Filtre Catégories */}
+                  <div style={{ position: 'relative', minWidth: 200 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterCategoryIds.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 200,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterCategoryIds.length > 0 ? 600 : 400,
+                        color: filterCategoryIds.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Catégories {filterCategoryIds.length > 0 ? `(${filterCategoryIds.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showCategoryFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 280,
+                        maxHeight: 300,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterCategoryIds.length === 0}
+                              onChange={() => setFilterCategoryIds([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Toutes</span>
+                          </label>
+                          {categories.map(c => (
+                            <label key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                              onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filterCategoryIds.includes(String(c.id))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setFilterCategoryIds([...filterCategoryIds, String(c.id)]);
+                                  } else {
+                                    setFilterCategoryIds(filterCategoryIds.filter(id => id !== String(c.id)));
+                                  }
+                                }}
+                                style={{ marginRight: 8 }}
+                              />
+                              {c.name}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtre Fournisseurs */}
+                  <div style={{ position: 'relative', minWidth: 160 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowFournisseurFilter(!showFournisseurFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterFournisseurIds.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 160,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterFournisseurIds.length > 0 ? 600 : 400,
+                        color: filterFournisseurIds.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Fournisseurs {filterFournisseurIds.length > 0 ? `(${filterFournisseurIds.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showFournisseurFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 200,
+                        maxHeight: 300,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterFournisseurIds.length === 0}
+                              onChange={() => setFilterFournisseurIds([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Tous</span>
+                          </label>
+                          {fournisseurs.map(f => (
+                            <label key={f.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                              onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filterFournisseurIds.includes(String(f.id))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setFilterFournisseurIds([...filterFournisseurIds, String(f.id)]);
+                                  } else {
+                                    setFilterFournisseurIds(filterFournisseurIds.filter(id => id !== String(f.id)));
+                                  }
+                                }}
+                                style={{ marginRight: 8 }}
+                              />
+                              {f.name}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtre Villes */}
+                  <div style={{ position: 'relative', minWidth: 140 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowVilleFilter(!showVilleFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterVilleIds.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 140,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterVilleIds.length > 0 ? 600 : 400,
+                        color: filterVilleIds.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Villes {filterVilleIds.length > 0 ? `(${filterVilleIds.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showVilleFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 180,
+                        maxHeight: 300,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterVilleIds.length === 0}
+                              onChange={() => setFilterVilleIds([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Toutes</span>
+                          </label>
+                          {villes.map(v => (
+                            <label key={v.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                              onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filterVilleIds.includes(String(v.id))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setFilterVilleIds([...filterVilleIds, String(v.id)]);
+                                  } else {
+                                    setFilterVilleIds(filterVilleIds.filter(id => id !== String(v.id)));
+                                  }
+                                }}
+                                style={{ marginRight: 8 }}
+                              />
+                              {v.name}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtre Types */}
+                  <div style={{ position: 'relative', minWidth: 130 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowTypeFilter(!showTypeFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterTypes.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 130,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterTypes.length > 0 ? 600 : 400,
+                        color: filterTypes.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Types {filterTypes.length > 0 ? `(${filterTypes.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showTypeFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 160
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterTypes.length === 0}
+                              onChange={() => setFilterTypes([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Tous</span>
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterTypes.includes('recurring')}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setFilterTypes([...filterTypes, 'recurring']);
+                                } else {
+                                  setFilterTypes(filterTypes.filter(t => t !== 'recurring'));
+                                }
+                              }}
+                              style={{ marginRight: 8 }}
+                            />
+                            Récurrente
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterTypes.includes('variable')}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setFilterTypes([...filterTypes, 'variable']);
+                                } else {
+                                  setFilterTypes(filterTypes.filter(t => t !== 'variable'));
+                                }
+                              }}
+                              style={{ marginRight: 8 }}
+                            />
+                            Variable
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtre Statuts */}
+                  <div style={{ position: 'relative', minWidth: 130 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowPaidFilter(!showPaidFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterPaidStatuses.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 130,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterPaidStatuses.length > 0 ? 600 : 400,
+                        color: filterPaidStatuses.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Statuts {filterPaidStatuses.length > 0 ? `(${filterPaidStatuses.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showPaidFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 160
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterPaidStatuses.length === 0}
+                              onChange={() => setFilterPaidStatuses([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Tous</span>
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterPaidStatuses.includes('paid')}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setFilterPaidStatuses([...filterPaidStatuses, 'paid']);
+                                } else {
+                                  setFilterPaidStatuses(filterPaidStatuses.filter(s => s !== 'paid'));
+                                }
+                              }}
+                              style={{ marginRight: 8 }}
+                            />
+                            Payée
+                          </label>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterPaidStatuses.includes('unpaid')}
+                              onChange={e => {
+                                if (e.target.checked) {
+                                  setFilterPaidStatuses([...filterPaidStatuses, 'unpaid']);
+                                } else {
+                                  setFilterPaidStatuses(filterPaidStatuses.filter(s => s !== 'unpaid'));
+                                }
+                              }}
+                              style={{ marginRight: 8 }}
+                            />
+                            Non payée
+                          </label>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 
                 </div>
                 <button
@@ -450,54 +906,6 @@ const Charges = () => {
                     <span style={{ fontSize: '1rem' }}>＋</span>
                     Ajouter
                   </button>
-                  <button
-                    onClick={() => { setImportMode('carburant'); setShowAutorouteModal(true); }}
-                    style={{
-                      background: 'linear-gradient(45deg, #2e7d32, #66bb6a)',
-                      color: 'white',
-                      border: 'none',
-                      width: '200px',
-                      padding: '0.45rem 0.9rem',
-                      height: 34,
-                      borderRadius: 6,
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(46, 125, 50, 0.1)',
-                      transition: 'all 0.2s ease',
-                      marginLeft: 12
-                    }}
-                  >
-                    <span style={{ fontSize: '1rem' }}>⛽</span>
-                    Import charge carburant
-                  </button>
-                  <button
-                    onClick={() => { setImportMode('autoroute'); setShowAutorouteModal(true); }}
-                    style={{
-                      background: 'linear-gradient(45deg, #ff9800, #ffc107)',
-                      color: 'white',
-                      border: 'none',
-                      width: '180px',
-                      padding: '0.45rem 0.9rem',
-                      height: 34,
-                      borderRadius: 6,
-                      fontSize: '0.9rem',
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(255, 152, 0, 0.1)',
-                      transition: 'all 0.2s ease',
-                      marginLeft: 12
-                    }}
-                  >
-                    <span style={{ fontSize: '1rem' }}>🛣️</span>
-                    Import charge autoroute
-                  </button>
               </div>
             </div>
 
@@ -509,15 +917,15 @@ const Charges = () => {
                   <thead>
                     <tr>
                       <th>ID</th>
-                      <th>Libellé</th>
+                      <th>Fournisseur</th>
                       <th>Catégorie</th>
                       <th>Ambulance</th>
                       <th>Ville</th>
                       <th>Type</th>
-                      <th>Personnel</th>
                       <th>Statut</th>
                       <th>Détails</th>
                       <th>Dates</th>
+                      <th>Mois facture</th>
                       <th>Valide</th>
                       <th>Actions</th>
                     </tr>
@@ -528,7 +936,7 @@ const Charges = () => {
                     ) : filteredCharges.map(c => (
                       <tr key={c.id}>
                         <td>{c.id}</td>
-                        <td>{c.label}</td>
+                        <td>{c.fournisseurName || c.label}</td>
                         <td>{c.categoryName || '-'}</td>
                         <td>{c.ambulancePlate || '-'}</td>
                         <td>{c.villeName || '-'}</td>
@@ -536,13 +944,6 @@ const Charges = () => {
                           <span style={{ padding: '2px 8px', borderRadius: 12, fontSize: 12, background: c.type === 'recurring' ? '#f1f8e9' : '#fff3e0', border: '1px solid #ddd' }}>
                             {c.type === 'recurring' ? 'Récurrente' : 'Variable'}
                           </span>
-                        </td>
-                        <td>
-                          {(c.notes || '').includes('[Masse salariale') ? (
-                            <span>{(c.notes || '').match(/\[Masse salariale:([^\]]+)\]/)?.[1]?.trim() || '-'}</span>
-                          ) : (
-                            <span>-</span>
-                          )}
                         </td>
                         <td>
                           {(function(){
@@ -568,6 +969,7 @@ const Charges = () => {
                             <span>{formatFr(c.variableDate) || '-'}</span>
                           )}
                         </td>
+                        <td>{c.invoicePeriod || '-'}</td>
                         <td>
                           {c.valide === 1 || c.valide === true ? (
                             <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 12, background:'#e8f5e9', color:'#388e3c', border:'1px solid #b2dfdb', fontWeight:600 }}>Valide</span>
@@ -576,57 +978,117 @@ const Charges = () => {
                           )}
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center', flexWrap: 'nowrap' }}>
+                            {(c.valide === 1 || c.valide === true) ? (
+                              <button
+                                onClick={() => handleInvalidate(c.id)}
+                                title="Marquer non valide"
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                  boxSizing: 'border-box',
+                                  lineHeight: '32px',
+                                  padding: 0,
+                                  borderRadius: '50%',
+                                  background: '#fff3e0',
+                                  color: '#f57c00',
+                                  border: '1px solid #ffe0b2',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 600,
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                              >🚫</button>
+                            ) : (
+                              <button
+                                onClick={() => handleValidate(c.id)}
+                                title="Valider"
+                                style={{
+                                  width: 32,
+                                  height: 32,
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                  boxSizing: 'border-box',
+                                  lineHeight: '32px',
+                                  padding: 0,
+                                  borderRadius: '50%',
+                                  background: '#e9f7ef',
+                                  color: '#1b8f3a',
+                                  border: '1px solid #a7e3bd',
+                                  cursor: 'pointer',
+                                  fontSize: '16px',
+                                  fontWeight: 600,
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                                }}
+                              >✔️</button>
+                            )}
                             <button
                               onClick={() => openEditModal(c)}
                               title="Modifier"
                               style={{
-                                width: 'auto',
-                                whiteSpace: 'nowrap',
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
                                 background: '#e8f1fe',
                                 color: '#0b63c5',
                                 border: '1px solid #90caf9',
-                                borderRadius: '999px',
-                                padding: '6px 10px',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
-                                fontWeight: 600
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
                               }}
-                            >✏️ Modifier</button>
+                            >✏️</button>
                             {(c.type === 'recurring' || c.type === 'variable') && (
                               <button
                                 onClick={() => openInstallments(c)}
                                 title="Échéances"
                                 style={{
-                                  width: 'auto',
-                                  whiteSpace: 'nowrap',
+                                  width: 32,
+                                  height: 32,
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                  boxSizing: 'border-box',
+                                  lineHeight: '32px',
+                                  padding: 0,
+                                  borderRadius: '50%',
                                   background: '#e9f7ef',
                                   color: '#1b8f3a',
                                   border: '1px solid #a7e3bd',
-                                  borderRadius: '999px',
-                                  padding: '6px 10px',
                                   cursor: 'pointer',
-                                  fontSize: '0.85rem',
-                                  fontWeight: 600
+                                  fontSize: '16px',
+                                  fontWeight: 600,
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
                                 }}
-                              >📅 Échéances</button>
+                              >📅</button>
                             )}
                             <button
                               onClick={() => setDeleteId(c.id)}
                               title="Supprimer"
                               style={{
-                                width: 'auto',
-                                whiteSpace: 'nowrap',
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
                                 background: '#fdecec',
                                 color: '#c62828',
                                 border: '1px solid #f4b4b4',
-                                borderRadius: '999px',
-                                padding: '6px 10px',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
-                                fontWeight: 600
+                                fontSize: '16px',
+                                fontWeight: 600,
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
                               }}
-                            >🗑️ Supprimer</button>
+                            >🗑️</button>
                           </div>
                         </td>
                       </tr>
@@ -641,7 +1103,7 @@ const Charges = () => {
         {/* Modale ajout/modif charge */}
         {showModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '100vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
               <div style={{ marginBottom: '1.5rem', textAlign: 'center', borderBottom: '2px solid #f1f3f4', paddingBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>{editChargeItem ? '✏️ Modifier la charge' : '➕ Ajouter une nouvelle charge'}</h2>
               </div>
@@ -650,8 +1112,24 @@ const Charges = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                   <div style={{ padding: '1rem', background: '#f7fafc', border: '1px solid #e2e8f0', borderRadius: 12 }}>
                     <div className="form-group" style={{ marginBottom: '1rem' }}>
-                      <label>Libellé *</label>
-                      <input value={form.label} onChange={e => setForm({ ...form, label: e.target.value })} required />
+                      <label>Fournisseur *</label>
+                      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                        <input
+                          type="text"
+                          placeholder="Rechercher un fournisseur..."
+                          value={fournisseurSearch}
+                          onChange={e => setFournisseurSearch(e.target.value)}
+                          style={{ padding:'0.6rem 0.8rem', border:'1.5px solid #e3e6f0', borderRadius:8 }}
+                        />
+                        <select value={form.fournisseurId || ''} onChange={e => setForm({ ...form, fournisseurId: e.target.value })} required>
+                          <option value="">--</option>
+                          {fournisseurs
+                            .filter(f => (f.name || '').toLowerCase().includes(fournisseurSearch.toLowerCase()))
+                            .map(f => (
+                              <option key={f.id} value={f.id}>{f.name}</option>
+                            ))}
+                        </select>
+                      </div>
                     </div>
                     <div className="form-group" style={{ marginBottom: '1rem' }}>
                       <label>Catégorie</label>
@@ -812,9 +1290,13 @@ const Charges = () => {
                           <label>Montant</label>
                           <input type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} />
                         </div>
-                        <div className="form-group">
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
                           <label>Date</label>
                           <input type="date" value={form.variableDate} onChange={e => setForm({ ...form, variableDate: e.target.value })} />
+                        </div>
+                        <div className="form-group">
+                          <label>Mois facture</label>
+                          <input type="month" value={form.invoicePeriod} onChange={e => setForm({ ...form, invoicePeriod: e.target.value })} />
                         </div>
                       </>
                     )}
@@ -833,33 +1315,79 @@ const Charges = () => {
         {/* Modale échéances */}
         {showInstallmentsModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '1000px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
               <div style={{ marginBottom: '1.5rem', textAlign: 'center', borderBottom: '2px solid #f1f3f4', paddingBottom: '1rem' }}>
-                <h2 style={{ margin: 0 }}>📅 Échéances — {selectedCharge?.label}</h2>
+                <h2 style={{ margin: 0 }}>📅 Échéances — {selectedCharge?.fournisseurName || selectedCharge?.label}</h2>
               </div>
-              <div className="table-container">
-                <table className="data-table">
+              <div style={{ overflowX: 'visible' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                   <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Montant</th>
-                      <th>Statut</th>
-                      <th>Action</th>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#475569', fontSize: '14px', width: '30%' }}>Date d'échéance</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#475569', fontSize: '14px', width: '25%' }}>Montant</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 600, color: '#475569', fontSize: '14px', width: '20%' }}>Statut</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 600, color: '#475569', fontSize: '14px', width: '25%' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {installments.length === 0 ? (
-                      <tr><td colSpan="4">Aucune échéance.</td></tr>
+                      <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>Aucune échéance.</td></tr>
                     ) : installments.map(i => (
-                      <tr key={i.id}>
-                        <td>{formatFr(i.dueDate)}</td>
-                        <td>{i.amount}</td>
-                        <td>{i.isPaid ? 'Payée' : 'À payer'}</td>
-                        <td>
-                          {!i.isPaid ? (
-                            <button onClick={() => handlePayInstallment(i.id)} className="submit-btn" style={{ background: '#28a745' }}> payée</button>
+                      <tr key={i.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '14px 16px', fontSize: '15px', fontWeight: 500, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                          📅 {formatFr(i.dueDate)}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '15px', fontWeight: 600, color: '#0f172a' }}>
+                          {Number(i.amount).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} DH
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          {i.isPaid ? (
+                            <span style={{ padding: '4px 12px', borderRadius: 12, fontSize: 13, background: '#d1fae5', color: '#065f46', fontWeight: 600, whiteSpace: 'nowrap' }}>✓ Payée</span>
                           ) : (
-                            <button onClick={() => handleUnpayInstallment(i.id)} className="submit-btn" style={{ background: '#f44336' }}> non payée</button>
+                            <span style={{ padding: '4px 12px', borderRadius: 12, fontSize: 13, background: '#fee2e2', color: '#991b1b', fontWeight: 600, whiteSpace: 'nowrap' }}>⏳ À payer</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                          {!i.isPaid ? (
+                            <button 
+                              onClick={() => handlePayInstallment(i.id)} 
+                              style={{ 
+                                background: '#10b981', 
+                                color: 'white', 
+                                border: 'none', 
+                                padding: '8px 16px', 
+                                borderRadius: 8, 
+                                fontWeight: 600, 
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onMouseOver={e => e.currentTarget.style.background = '#059669'}
+                              onMouseOut={e => e.currentTarget.style.background = '#10b981'}
+                            >
+                              ✓ Marquer payée
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={() => handleUnpayInstallment(i.id)} 
+                              style={{ 
+                                background: '#ef4444', 
+                                color: 'white', 
+                                border: 'none', 
+                                padding: '8px 16px', 
+                                borderRadius: 8, 
+                                fontWeight: 600, 
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                transition: 'all 0.2s',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onMouseOver={e => e.currentTarget.style.background = '#dc2626'}
+                              onMouseOut={e => e.currentTarget.style.background = '#ef4444'}
+                            >
+                              ✗ Marquer non payée
+                            </button>
                           )}
                         </td>
                       </tr>
@@ -867,8 +1395,25 @@ const Charges = () => {
                   </tbody>
                 </table>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-                <button onClick={() => setShowInstallmentsModal(false)} style={{ background: '#e2e8f0', color: '#4a5568', border: 'none', padding: '0.7rem 1.2rem', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>Fermer</button>
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                <button 
+                  onClick={() => setShowInstallmentsModal(false)} 
+                  style={{ 
+                    background: '#e2e8f0', 
+                    color: '#4a5568', 
+                    border: 'none', 
+                    padding: '10px 24px', 
+                    borderRadius: 8, 
+                    fontWeight: 600, 
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = '#cbd5e1'}
+                  onMouseOut={e => e.currentTarget.style.background = '#e2e8f0'}
+                >
+                  Fermer
+                </button>
               </div>
             </div>
           </div>
@@ -891,72 +1436,7 @@ const Charges = () => {
         {/* Notification */}
         <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: '', type: '' })} />
 
-        {/* Modale import autoroute */}
-        {showAutorouteModal && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000, padding: '1rem' }}>
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
-              <div style={{ marginBottom: '1.5rem', textAlign: 'center', borderBottom: '2px solid #f1f3f4', paddingBottom: '1rem' }}>
-                <h2 style={{ margin: 0 }}>{importMode === 'carburant' ? '⛽ Importer une charge carburant' : '🛣️ Importer une charge autoroute'}</h2>
-              </div>
-              <form onSubmit={async e => {
-                e.preventDefault();
-                setAutorouteResult(null);
-                try {
-                  const apiCall = importMode === 'carburant' ? carburantCharge : autorouteCharge;
-                  const res = await apiCall(autorouteForm);
-                  setAutorouteResult(res.data);
-                  setNotification({ message: 'Import réussi', type: 'success' });
-                  setShowAutorouteModal(false);
-                  setAutorouteForm({ montant: '', ville: '', ambulanceNumber: '', ambulancierName: '', date: '' });
-                  loadCharges();
-                } catch (err) {
-                  setAutorouteResult(null);
-                  setNotification({ message: err?.response?.data?.message || 'Erreur import', type: 'error' });
-                }
-              }}>
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Montant *</label>
-                  <input type="number" step="0.01" value={autorouteForm.montant} onChange={e => setAutorouteForm(f => ({ ...f, montant: e.target.value }))} required />
-                </div>
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Ville *</label>
-                  <select value={autorouteForm.ville} onChange={e => setAutorouteForm(f => ({ ...f, ville: e.target.value }))} required>
-                    <option value="">-- Sélectionner --</option>
-                    {villes.map(v => (
-                      <option key={v.id} value={v.name}>{v.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Numéro ambulance (interne) *</label>
-                  <input type="text" value={autorouteForm.ambulanceNumber} onChange={e => setAutorouteForm(f => ({ ...f, ambulanceNumber: e.target.value }))} required />
-                </div>
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Nom ambulancier *</label>
-                  <input type="text" value={autorouteForm.ambulancierName} onChange={e => setAutorouteForm(f => ({ ...f, ambulancierName: e.target.value }))} required />
-                </div>
-                <div className="form-group" style={{ marginBottom: '1rem' }}>
-                  <label>Date *</label>
-                  <input type="date" value={autorouteForm.date} onChange={e => setAutorouteForm(f => ({ ...f, date: e.target.value }))} required />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: 24 }}>
-                  <button type="button" onClick={() => setShowAutorouteModal(false)} style={{ background: '#e2e8f0', color: '#4a5568', border: 'none', padding: '0.7rem 1.2rem', borderRadius: 8, fontWeight: 600, cursor: 'pointer' }}>Annuler</button>
-                  <button type="submit" className="submit-btn" style={{ background: '#ff9800', color: 'white' }}>Importer</button>
-                </div>
-              </form>
-              {autorouteResult && (
-                <div style={{ marginTop: 24, background: '#f8fafc', border: '1px solid #e3e6f0', borderRadius: 8, padding: '1rem' }}>
-                  <div><b>Résultat :</b></div>
-                  <div>Charge id : {autorouteResult.id}</div>
-                  <div>Ville id : {autorouteResult.villeId || <span style={{ color: 'red' }}>Non trouvée</span>}</div>
-                  <div>Ambulance id : {autorouteResult.ambulanceId || <span style={{ color: 'red' }}>Non trouvée</span>}</div>
-                  <div>Ambulancier id : {autorouteResult.ambulancierId || <span style={{ color: 'red' }}>Non trouvé</span>}</div>
-                  {autorouteResult.message && <div style={{ color: '#f57c00', marginTop: 8 }}>{autorouteResult.message}</div>}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+    
       </main>
     </div>
   );

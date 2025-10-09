@@ -67,6 +67,7 @@ export const deleteAmbulancier = (id) => api.delete(`/ambulanciers/${id}`);
 export const fetchInvoices = () => api.get('/invoices');
 export const fetchPaidInvoices = () => api.get('/invoices/paid');
 export const createInvoice = (data) => api.post('/invoices', data);
+export const updateInvoice = (id, data) => api.put(`/invoices/${id}`, data);
 export const payInvoice = (id) => api.patch(`/invoices/${id}/pay`);
 export const deleteInvoice = (id) => api.delete(`/invoices/${id}`);
 export const unpayInvoice = (id) => api.patch(`/invoices/${id}/unpay`);
@@ -124,6 +125,8 @@ export const deleteCharge = (id) => api.delete(`/charges/${id}`);
 export const fetchChargeInstallments = (chargeId) => api.get(`/charges/${chargeId}/installments`);
 export const payChargeInstallment = (installmentId) => api.patch(`/charges/installments/${installmentId}/pay`);
 export const unpayChargeInstallment = (installmentId) => api.patch(`/charges/installments/${installmentId}/unpay`);
+export const validateCharge = (id) => api.patch(`/charges/${id}/validate`);
+export const invalidateCharge = (id) => api.patch(`/charges/${id}/invalidate`);
 
 // Rapports
 export const fetchProfitReport = ({ start, end, paidOnly } = {}) => {
@@ -136,6 +139,12 @@ export const fetchProfitReport = ({ start, end, paidOnly } = {}) => {
 
 export const autorouteCharge = (data) => api.post('/charges/autoroute', data);
 export const carburantCharge = (data) => api.post('/charges/carburant', data);
+
+export const fetchFournisseurs = () => api.get('/fournisseurs');
+export const fetchFournisseurById = (id) => api.get(`/fournisseurs/${id}`);
+export const createFournisseur = (data) => api.post('/fournisseurs', data);
+export const updateFournisseur = (id, data) => api.put(`/fournisseurs/${id}`, data);
+export const deleteFournisseur = (id) => api.delete(`/fournisseurs/${id}`);
 
 export { getNom };
 

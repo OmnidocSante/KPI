@@ -115,7 +115,7 @@ const Ambulanciers = () => {
                   </div>
                   <input value={filterVille} onChange={e => setFilterVille(e.target.value)} placeholder="Filtrer par ville" style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 160 }} />
                 </div>
-                <button onClick={openAdd} style={{ background: 'linear-gradient(45deg, #1976d2, #2196f3)', color: 'white', border: 'none', width: '170px', padding: '0.45rem 0.9rem', height: 34, borderRadius: 6, fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(25, 118, 210, 0.1)', transition: 'all 0.2s ease', marginRight: '2rem' }}>＋ Ajouter un ambulancier</button>
+                <button onClick={openAdd} style={{ background: 'linear-gradient(45deg, #1976d2, #2196f3)', color: 'white', border: 'none', width: '14%', padding: '0.45rem 0.9rem', height: 34, borderRadius: 6, fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(25, 118, 210, 0.1)', transition: 'all 0.2s ease', marginRight: '2rem' }}>＋ Ajouter un ambulancier</button>
               </div>
             </div>
 
@@ -145,9 +145,45 @@ const Ambulanciers = () => {
                         <td>{a.ville || '-'}</td>
                         <td>{a.email || '-'}</td>
                         <td>
-                          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-                            <button onClick={() => openEdit(a)} title="Modifier" style={{ background: '#e8f1fe', color: '#0b63c5', border: '1px solid #90caf9', borderRadius: '999px', padding: '6px 10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>✏️ Modifier</button>
-                            <button onClick={() => setDeleteId(a.id)} title="Supprimer" style={{ background: '#fdecec', color: '#c62828', border: '1px solid #f4b4b4', borderRadius: '999px', padding: '6px 10px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600 }}>🗑️ Supprimer</button>
+                          <div style={{ display:'flex', gap:8, justifyContent:'center', alignItems:'center', flexWrap:'nowrap' }}>
+                            <button
+                              onClick={() => openEdit(a)}
+                              title="Modifier"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e8f1fe',
+                                color: '#0b63c5',
+                                border: '1.5px solid #90caf9',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize:'16px', fontWeight:600
+                              }}
+                            >✏️</button>
+                            <button
+                              onClick={() => setDeleteId(a.id)}
+                              title="Supprimer"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#fdecec',
+                                color: '#c62828',
+                                border: '1.5px solid #f4b4b4',
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', fontSize:'16px', fontWeight:600
+                              }}
+                            >🗑️</button>
                           </div>
                         </td>
                       </tr>
