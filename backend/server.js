@@ -26,6 +26,7 @@ const villeRoutes = require('./routes/villeRoutes');
 const globaleRoutes = require('./routes/globaleRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const fournisseurRoutes = require('./routes/fournisseurRoutes');
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/villes', villeRoutes);
 app.use('/globales', globaleRoutes);
 app.use('/reports', reportRoutes);
 app.use('/invoices', invoiceRoutes);
+app.use('/fournisseurs', fournisseurRoutes);
 
 // Route de test
 app.get('/api/test', (req, res) => {

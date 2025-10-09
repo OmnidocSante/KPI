@@ -19,6 +19,8 @@ router.put('/:id', ctrl.updateCharge);
 router.delete('/:id', ctrl.deleteCharge);
 router.post('/autoroute', ctrl.autorouteCharge);
 router.post('/carburant', ctrl.carburantCharge);
+router.patch('/:id/validate', ctrl.markChargeValid);
+router.patch('/:id/invalidate', ctrl.markChargeInvalid);
 
 // Échéances
 router.get('/:chargeId/installments', ctrl.listInstallments);

@@ -51,6 +51,16 @@ async function createChargesTables() {
   await db.query(`
     ALTER TABLE Charges ADD COLUMN valide TINYINT(1) DEFAULT 1;
   `).catch(() => {}); // ignore si déjà existant
+  await db.query(`
+    ALTER TABLE Charges ADD COLUMN fournisseurId INT NULL;
+  `).catch(() => {});
+  await db.query(`
+    ALTER TABLE Charges ADD COLUMN invoicePeriod VARCHAR(7) NULL;
+  `).catch(() => {});
+  await db.query(`
+    ALTER TABLE Charges ADD CONSTRAINT fk_charges_fournisseur FOREIGN KEY (fournisseurId) REFERENCES Fournisseurs(id)
+      ON UPDATE CASCADE ON DELETE SET NULL;
+  `).catch(() => {});
 
   console.log('Tables Charges créées/mises à jour');
   process.exit(0);

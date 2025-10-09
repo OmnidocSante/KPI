@@ -6,6 +6,7 @@ const {
   listPaidInvoices,
   getInvoice,
   createInvoice,
+  updateInvoice,
   markPaid,
   softDelete,
   unpayInvoice
@@ -17,6 +18,7 @@ router.get('/', listInvoices);
 router.get('/paid', listPaidInvoices);
 router.get('/:id', getInvoice);
 router.post('/', createInvoice);
+router.put('/:id', updateInvoice);
 router.patch('/:id/pay', markPaid);
 router.patch('/:id/unpay', unpayInvoice);
 router.delete('/:id', softDelete);

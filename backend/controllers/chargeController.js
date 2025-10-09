@@ -116,12 +116,14 @@ const listCharges = async (req, res) => {
         cat.name AS categoryName,
         v.name AS villeName,
         a.numberPlate AS ambulancePlate,
+        f.name AS fournisseurName,
         (SELECT COUNT(*) FROM ChargeInstallments ci WHERE ci.chargeId = c.id AND ci.destroyTime IS NULL) AS totalInstallments,
         (SELECT COUNT(*) FROM ChargeInstallments ci WHERE ci.chargeId = c.id AND ci.destroyTime IS NULL AND ci.isPaid = 1) AS paidInstallments
       FROM Charges c
       LEFT JOIN ChargeCategories cat ON c.categoryId = cat.id
       LEFT JOIN Villes v ON c.villeId = v.id
       LEFT JOIN aumbulances a ON c.ambulanceId = a.id
+      LEFT JOIN Fournisseurs f ON c.fournisseurId = f.id
       WHERE c.destroyTime IS NULL
       ORDER BY c.createdAt DESC
     `);
@@ -134,7 +136,7 @@ const listCharges = async (req, res) => {
 const getCharge = async (req, res) => {
   try {
     const [rows] = await db.query(
-      'SELECT * FROM Charges WHERE id = ? AND destroyTime IS NULL',
+      `SELECT c.*, f.name AS fournisseurName FROM Charges c LEFT JOIN Fournisseurs f ON c.fournisseurId = f.id WHERE c.id = ? AND c.destroyTime IS NULL`,
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ message: 'Charge non trouvée' });
@@ -156,6 +158,7 @@ const createCharge = async (req, res) => {
       categoryId,
       villeId,
       ambulanceId,
+      fournisseurId,
       type, // 'recurring' | 'variable'
       priceType, // 'monthly' | 'yearly' (si recurring)
       unitPrice, // montant par période si recurring
@@ -165,7 +168,8 @@ const createCharge = async (req, res) => {
       amount, // pour variable
       variableDate, // date de la charge variable
       notes,
-      valide // <-- Ajouté
+      valide, // <-- Ajouté
+      invoicePeriod
     } = req.body;
 
     if (!label || !type) {
@@ -195,9 +199,9 @@ const createCharge = async (req, res) => {
 
     const now = new Date();
     const [result] = await db.query(
-      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, priceType, unitPrice, periodCount, startDate, endDate, amount, variableDate, notes, createdAt, updatedAt, valide)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [label, categoryId || null, villeId || null, ambulanceId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, computedEndDate || null, amount || null, variableDate || null, notes || null, now, now, (valide === 0 || valide === false) ? 0 : 1]
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, fournisseurId, type, priceType, unitPrice, periodCount, startDate, endDate, amount, variableDate, notes, createdAt, updatedAt, valide, invoicePeriod)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [label, categoryId || null, villeId || null, ambulanceId || null, fournisseurId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, computedEndDate || null, amount || null, variableDate || null, notes || null, now, now, (valide === 0 || valide === false) ? 0 : 1, invoicePeriod || null]
     );
 
     const chargeId = result.insertId;
@@ -224,6 +228,7 @@ const updateCharge = async (req, res) => {
       categoryId,
       villeId,
       ambulanceId,
+      fournisseurId,
       type,
       priceType,
       unitPrice,
@@ -233,13 +238,14 @@ const updateCharge = async (req, res) => {
       amount,
       notes,
       variableDate,
-      valide // <-- Ajouté
+      valide, // <-- Ajouté
+      invoicePeriod
     } = req.body;
     const now = new Date();
     const [result] = await db.query(
-      `UPDATE Charges SET label=?, categoryId=?, villeId=?, ambulanceId=?, type=?, priceType=?, unitPrice=?, periodCount=?, startDate=?, endDate=?, amount=?, variableDate=?, notes=?, updatedAt=?, valide=?
+      `UPDATE Charges SET label=?, categoryId=?, villeId=?, ambulanceId=?, fournisseurId=?, type=?, priceType=?, unitPrice=?, periodCount=?, startDate=?, endDate=?, amount=?, variableDate=?, notes=?, updatedAt=?, valide=?, invoicePeriod=?
        WHERE id = ? AND destroyTime IS NULL`,
-      [label, categoryId || null, villeId || null, ambulanceId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, endDate || null, amount || null, variableDate || null, notes || null, now, (valide === 0 || valide === false) ? 0 : 1, req.params.id]
+      [label, categoryId || null, villeId || null, ambulanceId || null, fournisseurId || null, type, priceType || null, unitPrice || null, periodCount || null, startDate || null, endDate || null, amount || null, variableDate || null, notes || null, now, (valide === 0 || valide === false) ? 0 : 1, invoicePeriod || null, req.params.id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ message: 'Charge non trouvée' });
 
@@ -326,7 +332,7 @@ const autorouteCharge = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         'Autoroute',
-        null,
+        3,
         villeId,
         ambulanceId,
         'variable',
@@ -370,7 +376,7 @@ const carburantCharge = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
       [
         'Carburant',
-        null,
+        2,
         villeId,
         ambulanceId,
         'variable',
@@ -395,6 +401,28 @@ const carburantCharge = async (req, res) => {
   }
 };
 
+const markChargeValid = async (req, res) => {
+  try {
+    const now = new Date();
+    const [r] = await db.query('UPDATE Charges SET valide = 1, updatedAt = ? WHERE id = ? AND destroyTime IS NULL', [now, req.params.id]);
+    if (r.affectedRows === 0) return res.status(404).json({ message: 'Charge non trouvée' });
+    res.json({ message: 'Charge validée' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+const markChargeInvalid = async (req, res) => {
+  try {
+    const now = new Date();
+    const [r] = await db.query('UPDATE Charges SET valide = 0, updatedAt = ? WHERE id = ? AND destroyTime IS NULL', [now, req.params.id]);
+    if (r.affectedRows === 0) return res.status(404).json({ message: 'Charge non trouvée' });
+    res.json({ message: 'Charge passée en non valide' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   getCategories,
   createCategory,
@@ -409,7 +437,9 @@ module.exports = {
   markInstallmentPaid,
   markInstallmentUnpaid,
   autorouteCharge,
-  carburantCharge
+  carburantCharge,
+  markChargeValid,
+  markChargeInvalid
 };
 
 

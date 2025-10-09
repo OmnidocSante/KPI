@@ -62,6 +62,31 @@ const createInvoice = async (req, res) => {
   }
 };
 
+const updateInvoice = async (req, res) => {
+  try {
+    const { number, supplier, amount, invoiceDate, terms } = req.body;
+    if (!number || !amount || !invoiceDate || !terms) {
+      return res.status(400).json({ message: 'number, amount, invoiceDate, terms requis' });
+    }
+    const now = new Date();
+    // Recalculer dueDate basé sur la nouvelle date et les nouvelles conditions
+    const due = new Date(invoiceDate);
+    due.setDate(due.getDate() + Number(terms));
+    const dueDate = due.toISOString().slice(0,10);
+    
+    const [r] = await db.query(
+      `UPDATE Invoices 
+       SET number=?, supplier=?, amount=?, invoiceDate=?, terms=?, dueDate=?, updatedAt=?
+       WHERE id=? AND destroyTime IS NULL`,
+      [number, supplier || null, amount, invoiceDate, terms, dueDate, now, req.params.id]
+    );
+    if (r.affectedRows === 0) return res.status(404).json({ message: 'Facture non trouvée' });
+    res.json({ message: 'Facture modifiée', dueDate });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
 const markPaid = async (req, res) => {
   try {
     const now = new Date();
@@ -99,6 +124,7 @@ module.exports = {
   listPaidInvoices,
   getInvoice,
   createInvoice,
+  updateInvoice,
   markPaid,
   unpayInvoice,
   softDelete
