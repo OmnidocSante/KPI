@@ -327,11 +327,12 @@ const autorouteCharge = async (req, res) => {
     const ambulancierId = ambcRows.length > 0 ? ambcRows[0].id : null;
     // Créer la charge non valide
     const now = new Date();
+    const invoicePeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const [result] = await db.query(
-      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes, createdAt, updatedAt, valide)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes,fournisseurId, createdAt, updatedAt, valide, invoicePeriod)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
       [
-        'Autoroute',
+        'ADM',
         3,
         villeId,
         ambulanceId,
@@ -339,8 +340,10 @@ const autorouteCharge = async (req, res) => {
         montant,
         date,
         `Import autoroute - Ambulancier: ${ambulancierName}`,
+        1,
         now,
-        now
+        now,
+        invoicePeriod
       ]
     );
     const chargeId = result.insertId;
@@ -371,11 +374,12 @@ const carburantCharge = async (req, res) => {
     const [ambcRows] = await db.query('SELECT id FROM Ambulanciers WHERE name LIKE ? AND destroyTime IS NULL', [`%${ambulancierName}%`]);
     const ambulancierId = ambcRows.length > 0 ? ambcRows[0].id : null;
     const now = new Date();
+    const invoicePeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const [result] = await db.query(
-      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes, createdAt, updatedAt, valide)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+      `INSERT INTO Charges (label, categoryId, villeId, ambulanceId, type, amount, variableDate, notes,fournisseurId, createdAt, updatedAt, valide, invoicePeriod)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
       [
-        'Carburant',
+        'Total',
         2,
         villeId,
         ambulanceId,
@@ -383,8 +387,10 @@ const carburantCharge = async (req, res) => {
         montant,
         date,
         `Import carburant - Ambulancier: ${ambulancierName}`,
+        2,
         now,
-        now
+        now,
+        invoicePeriod
       ]
     );
     const chargeId = result.insertId;
