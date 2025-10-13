@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
-import { fetchAmbulanciers, createAmbulancier, updateAmbulancier, deleteAmbulancier } from '../services/api';
+import { fetchAmbulanciers, createAmbulancier, updateAmbulancier, deleteAmbulancier, fetchVilles } from '../services/api';
 
 const Notification = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -23,6 +23,7 @@ const Ambulanciers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterVille, setFilterVille] = useState('');
+  const [villes, setVilles] = useState([]);
 
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -34,8 +35,9 @@ const Ambulanciers = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await fetchAmbulanciers();
-      setItems(res.data);
+      const [resAmb, resVilles] = await Promise.all([fetchAmbulanciers(), fetchVilles()]);
+      setItems(resAmb.data);
+      setVilles(Array.isArray(resVilles.data) ? resVilles.data : []);
     } catch (e) {
       setNotification({ message: "Erreur lors du chargement des ambulanciers", type: 'error' });
     }
@@ -113,7 +115,12 @@ const Ambulanciers = () => {
                     <input type="text" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} style={{ padding: '0.4rem 0.75rem', paddingLeft: '2rem', border: 'none', outline:'none', background:'transparent', width:'100%' }} />
                     <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', fontSize:14 }}>🔍</span>
                   </div>
-                  <input value={filterVille} onChange={e => setFilterVille(e.target.value)} placeholder="Filtrer par ville" style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 160 }} />
+                  <select value={filterVille} onChange={e => setFilterVille(e.target.value)} style={{ padding: '0.3rem 0.55rem', height: 34, borderRadius: 6, border: '1px solid #e3e6f0', background: '#fff', fontSize: '0.9rem', minWidth: 160 }}>
+                    <option value="">Toutes les villes</option>
+                    {villes.map(v => (
+                      <option key={v.id} value={v.name}>{v.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <button onClick={openAdd} style={{ background: 'linear-gradient(45deg, #1976d2, #2196f3)', color: 'white', border: 'none', width: '14%', padding: '0.45rem 0.9rem', height: 34, borderRadius: 6, fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', boxShadow: '0 2px 4px rgba(25, 118, 210, 0.1)', transition: 'all 0.2s ease', marginRight: '2rem' }}>＋ Ajouter un ambulancier</button>
               </div>
@@ -213,7 +220,12 @@ const Ambulanciers = () => {
                   </div>
                   <div className="form-group">
                     <label>Ville</label>
-                    <input value={form.ville} onChange={e => setForm({ ...form, ville: e.target.value })} />
+                    <select value={form.ville} onChange={e => setForm({ ...form, ville: e.target.value })}>
+                      <option value="">Sélectionner une ville</option>
+                      {villes.map(v => (
+                        <option key={v.id} value={v.name}>{v.name}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-group">
                     <label>Email</label>

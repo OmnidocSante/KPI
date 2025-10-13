@@ -80,7 +80,7 @@ const Fournisseurs = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Nom</th>
+                      <th style={{ minWidth: 320, width: 380 }}>Nom</th>
                       <th>Téléphone</th>
                       <th>Email</th>
                       <th>Adresse</th>
@@ -91,9 +91,9 @@ const Fournisseurs = () => {
                   <tbody>
                     {filtered.length === 0 ? (
                       <tr><td colSpan="6">Aucun fournisseur.</td></tr>
-                    ) : filtered.map(i => (
-                      <tr key={i.id}>
-                        <td>{i.name}</td>
+                      ) : filtered.map(i => (
+                        <tr key={i.id}>
+                          <td style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflow: 'hidden', textOverflow: 'clip', minWidth: 320, maxWidth: 520 }}>{i.name}</td>
                         <td>{i.tel || '-'}</td>
                         <td>{i.email || '-'}</td>
                         <td>{i.address || '-'}</td>
