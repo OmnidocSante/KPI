@@ -105,6 +105,17 @@ const Charges = () => {
   const [autorouteForm, setAutorouteForm] = useState({ montant: '', ville: '', ambulanceNumber: '', ambulancierName: '', date: '' });
   const [autorouteResult, setAutorouteResult] = useState(null);
 
+  // Réinitialiser les sélections dépendantes lors du changement de ville
+  useEffect(() => {
+    setForm(prev => ({
+      ...prev,
+      ambulanceId: '',
+      medecinId: '',
+      infirmierId: '',
+      ambulancierId: ''
+    }));
+  }, [form.villeId]);
+
   const loadCharges = async () => {
     setLoading(true);
     try {
@@ -1228,7 +1239,7 @@ const Charges = () => {
                       const selectedCategory = categories.find(c => String(c.id) === String(form.categoryId));
                       const rawName = (selectedCategory?.name || '').toLowerCase();
                       const catName = rawName.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                      const triggers = ['carburant','autoroute','autoroutes','entretien','assurance vehicule','vignette','vignettes'];
+                      const triggers = ['carburant','autoroute','autoroutes','entretien','assurance vehicule','vignette','vignettes','traite vehicule'];
                       const needsAmbulance = triggers.some(t => catName.includes(t));
                       if (!needsAmbulance) return null;
                       return (
@@ -1236,9 +1247,21 @@ const Charges = () => {
                           <label>Ambulance</label>
                           <select value={form.ambulanceId || ''} onChange={e => setForm({ ...form, ambulanceId: e.target.value })}>
                             <option value="">--</option>
-                            {ambulances.map(a => (
-                              <option key={a.id} value={a.id}>{a.numberPlate}</option>
-                            ))}
+                            {ambulances
+                              .filter(a => {
+                                const selectedVilleName = (villes.find(v => String(v.id) === String(form.villeId))?.name || '')
+                                  .toLowerCase()
+                                  .normalize('NFD')
+                                  .replace(/[\u0300-\u036f]/g, '');
+                                const av = String(a.villeActivite || '')
+                                  .toLowerCase()
+                                  .normalize('NFD')
+                                  .replace(/[\u0300-\u036f]/g, '');
+                                return !selectedVilleName || av === selectedVilleName;
+                              })
+                              .map(a => (
+                                <option key={a.id} value={a.id}>{a.numberPlate}</option>
+                              ))}
                           </select>
                         </div>
                       );
