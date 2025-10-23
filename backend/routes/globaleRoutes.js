@@ -3,6 +3,7 @@ const router = express.Router();
 const globaleController = require('../controllers/globaleController');
 const { verifyToken } = require('../middleware/auth');
 
+router.post('/import/json', globaleController.importGlobalesFromJson);
 // Routes protégées par le middleware d'authentification
 router.use(verifyToken);
 
@@ -18,5 +19,8 @@ router.delete('/:id', globaleController.deleteGlobale);
 // Nouvelles routes pour la gestion du soft delete
 router.post('/:id/restore', globaleController.restoreGlobale);
 router.delete('/:id/hard', globaleController.hardDeleteGlobale);
+
+// Route pour l'import depuis JSON
+
 
 module.exports = router; 

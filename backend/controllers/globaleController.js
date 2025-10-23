@@ -257,6 +257,114 @@ const hardDeleteGlobale = async (req, res) => {
   }
 };
 
+// Fonction utilitaire pour récupérer ou créer un ID dans une table
+const getIdOrCreate = async (table, field, value) => {
+  if (!value) return null;
+  // Rechercher l'ID existant
+  const [rows] = await db.query(`SELECT id FROM ${table} WHERE ${field} = ? AND destroyTime IS NULL`, [value]);
+  if (rows.length > 0) return rows[0].id;
+  // Créer un nouvel enregistrement si non trouvé
+  const [result] = await db.query(`INSERT INTO ${table} (${field}, createdAt, updatedAt) VALUES (?, NOW(), NOW())`, [value]);
+  return result.insertId;
+};
+
+// Fonction pour normaliser le type de business unit
+const normalizeBusinessUnitType = (val) => {
+  if (!val) return null;
+  const normalized = val.toLowerCase().trim();
+  return normalized === 'assurance' ? 'assurance' : normalized;
+};
+
+// Importer des globales depuis un fichier JSON
+const importGlobalesFromJson = async (req, res) => {
+  try {
+    const { types } = req.body;
+    
+    if (!types || !Array.isArray(types)) {
+      return res.status(400).json({ 
+        error: 'Le format JSON doit contenir un tableau "types" avec les données des globales' 
+      });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (let i = 0; i < types.length; i++) {
+      const item = types[i];
+      
+      try {
+        // Récupérer ou créer les IDs des entités liées
+        const villeId = await getIdOrCreate('villes', 'name', item.ville);
+        const clientId = await getIdOrCreate('clients', 'clientFullName', item.client);
+        const ambulanceId = item.ambulance ? await getIdOrCreate('aumbulances', 'number', item.ambulance) : null;
+        const produitId = await getIdOrCreate('produits', 'name', item.produit);
+        const medcienId = item.medecin ? await getIdOrCreate('medciens', 'name', item.medecin.trim()) : null;
+        const infermierId = item.infirmier ? await getIdOrCreate('infirmier', 'name', item.infirmier.trim()) : null;
+        
+        // Normaliser le type de business unit
+        const normalizedBUType = normalizeBusinessUnitType(item.businessUnit);
+        const businessUnitId = normalizedBUType ? await getIdOrCreate('businessunits', 'businessUnitType', normalizedBUType) : null;
+
+        // Préparer les données pour l'insertion
+        const now = new Date();
+        const dateCreation = item.datecreation ? new Date(item.datecreation) : null;
+        const caHT = item.caHT || 0;
+        const caTTC = item.caTTC || 0;
+
+        // Insérer dans la table Globales
+        const [result] = await db.query(
+          `INSERT INTO Globales (
+            villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
+            dateCreation, Ref, caHT, caTTC, fullName, createdAt, updatedAt, businessUnitType, 
+            etatdePaiment, numTelephone, note, type
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            villeId, clientId, ambulanceId, businessUnitId, produitId, medcienId, infermierId, 
+            dateCreation, item.Ref, caHT, caTTC, item.fullname, now, now, normalizedBUType, 
+            item.etat_paiement, item.numTelephone, item.note, item.type
+          ]
+        );
+
+        results.push({
+          index: i,
+          id: result.insertId,
+          ref: item.Ref,
+          fullname: item.fullname,
+          status: 'success'
+        });
+
+      } catch (itemError) {
+        console.error(`Erreur lors du traitement de l'item ${i}:`, itemError);
+        errors.push({
+          index: i,
+          ref: item.Ref || 'N/A',
+          fullname: item.fullname || 'N/A',
+          error: itemError.message,
+          status: 'error'
+        });
+      }
+    }
+
+    res.status(200).json({
+      message: `Traitement terminé: ${results.length} globales créées avec succès, ${errors.length} erreurs`,
+      success: results,
+      errors: errors,
+      summary: {
+        total: types.length,
+        success: results.length,
+        errors: errors.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de l\'import des globales:', error);
+    res.status(500).json({ 
+      error: 'Erreur lors de l\'import des globales', 
+      details: error.message 
+    });
+  }
+};
+
 module.exports = {
   getAllGlobales,
   getGlobaleById,
@@ -266,5 +374,6 @@ module.exports = {
   searchGlobales,
   restoreGlobale,
   getDeletedGlobales,
-  hardDeleteGlobale
+  hardDeleteGlobale,
+  importGlobalesFromJson
 }; 
