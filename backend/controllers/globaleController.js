@@ -56,12 +56,12 @@ const createGlobale = async (req, res) => {
       `INSERT INTO Globales (
         villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
         dateCreation, Ref, caHT, caTTC, fullName, createdAt, updatedAt, businessUnitType, 
-        etatdePaiment, numTelephone, note, type
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        etatdePaiment, numTelephone, note, type, valider
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
         dateCreation, Ref, caHT, caTTC, fullName, now, now, businessUnitType, 
-        etatdePaiment, numTelephone, note, type
+        etatdePaiment, numTelephone, note, type, 1
       ]
     );
 
@@ -257,6 +257,25 @@ const hardDeleteGlobale = async (req, res) => {
   }
 };
 
+// Valider une globale (passer valider de 0 à 1)
+const validerGlobale = async (req, res) => {
+  try {
+    const [result] = await db.query(
+      'UPDATE Globales SET valider = 1 WHERE id = ? AND destroyTime IS NULL',
+      [req.params.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Globale non trouvée' });
+    }
+
+    res.json({ message: 'Globale validée avec succès' });
+  } catch (error) {
+    console.error('Error validating globale:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Fonction utilitaire pour récupérer ou créer un ID dans une table
 const getIdOrCreate = async (table, field, value) => {
   if (!value) return null;
@@ -296,32 +315,50 @@ const importGlobalesFromJson = async (req, res) => {
         // Récupérer ou créer les IDs des entités liées
         const villeId = await getIdOrCreate('villes', 'name', item.ville);
         const clientId = await getIdOrCreate('clients', 'clientFullName', item.client);
-        const ambulanceId = item.ambulance ? await getIdOrCreate('aumbulances', 'number', item.ambulance) : null;
-        const produitId = await getIdOrCreate('produits', 'name', item.produit);
-        const medcienId = item.medecin ? await getIdOrCreate('medciens', 'name', item.medecin.trim()) : null;
-        const infermierId = item.infirmier ? await getIdOrCreate('infirmier', 'name', item.infirmier.trim()) : null;
         
         // Normaliser le type de business unit
         const normalizedBUType = normalizeBusinessUnitType(item.businessUnit);
         const businessUnitId = normalizedBUType ? await getIdOrCreate('businessunits', 'businessUnitType', normalizedBUType) : null;
 
-        // Préparer les données pour l'insertion
+        // Préparer les données communes
         const now = new Date();
         const dateCreation = item.datecreation ? new Date(item.datecreation) : null;
         const caHT = item.caHT || 0;
         const caTTC = item.caTTC || 0;
 
-        // Insérer dans la table Globales
+        // Déterminer si c'est une prestation de transport (TAM, TAS ou VSL)
+        const produitUpper = item.produit ? item.produit.toUpperCase().trim() : '';
+        const isTransportPrestation = ['TAM', 'TAS', 'VSL'].includes(produitUpper);
+        
+        // Si c'est une prestation de transport : ajouter l'ambulance, PAS de médecin/infirmier
+        // Si c'est une prestation d'honoraires : ajouter médecin/infirmier, PAS d'ambulance
+        let ambulanceId = null;
+        let medcienId = null;
+        let infermierId = null;
+        
+        if (isTransportPrestation) {
+          // Prestation de transport : seulement l'ambulance
+          ambulanceId = item.ambulance ? await getIdOrCreate('aumbulances', 'number', item.ambulance) : null;
+        } else {
+          // Prestation d'honoraires : médecin ou infirmier
+          medcienId = item.medecin ? await getIdOrCreate('medciens', 'name', item.medecin.trim()) : null;
+          infermierId = item.infirmier ? await getIdOrCreate('infirmier', 'name', item.infirmier.trim()) : null;
+        }
+
+        // Créer le produit
+        const produitId = await getIdOrCreate('produits', 'name', item.produit);
+        
+        // Insérer la prestation
         const [result] = await db.query(
           `INSERT INTO Globales (
             villeId, clientId, aumbulanceId, businessUnitId, produitId, medcienId, infermierId, 
             dateCreation, Ref, caHT, caTTC, fullName, createdAt, updatedAt, businessUnitType, 
-            etatdePaiment, numTelephone, note, type
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            etatdePaiment, numTelephone, note, type, valider
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             villeId, clientId, ambulanceId, businessUnitId, produitId, medcienId, infermierId, 
             dateCreation, item.Ref, caHT, caTTC, item.fullname, now, now, normalizedBUType, 
-            item.etat_paiement, item.numTelephone, item.note, item.type
+            item.etat_paiement, item.numTelephone, item.note, item.type, 0
           ]
         );
 
@@ -330,6 +367,8 @@ const importGlobalesFromJson = async (req, res) => {
           id: result.insertId,
           ref: item.Ref,
           fullname: item.fullname,
+          prestation: item.prestation || item.produit,
+          ambulance: ambulanceId ? item.ambulance : 'N/A',
           status: 'success'
         });
 
@@ -375,5 +414,6 @@ module.exports = {
   restoreGlobale,
   getDeletedGlobales,
   hardDeleteGlobale,
-  importGlobalesFromJson
+  importGlobalesFromJson,
+  validerGlobale
 }; 

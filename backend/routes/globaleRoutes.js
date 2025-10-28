@@ -20,7 +20,7 @@ router.delete('/:id', globaleController.deleteGlobale);
 router.post('/:id/restore', globaleController.restoreGlobale);
 router.delete('/:id/hard', globaleController.hardDeleteGlobale);
 
-// Route pour l'import depuis JSON
-
+// Route pour valider une globale
+router.post('/:id/valider', globaleController.validerGlobale);
 
 module.exports = router; 
