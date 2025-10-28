@@ -453,6 +453,9 @@ const Dashboard = () => {
   const [filterCaTTCMin, setFilterCaTTCMin] = useState('');
   const [filterCaTTCMax, setFilterCaTTCMax] = useState('');
   
+  // Filtre Validation
+  const [filterValider, setFilterValider] = useState([]);
+  
   const [dropdownOpen, setDropdownOpen] = useState({
     ville: false,
     produit: false,
@@ -461,10 +464,19 @@ const Dashboard = () => {
     client: false,
     ambulance: false,
     ref: false,
-    bu: false
+    bu: false,
+    valider: false,
+    // Dropdowns du formulaire
+    formBusinessUnit: false,
+    formClient: false,
+    formProduit: false,
+    formMedecin: false,
+    formVille: false,
+    formAmbulance: false
   });
 
   const [searchTerms, setSearchTerms] = useState({});
+  const [formSearchTerms, setFormSearchTerms] = useState({});
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   
@@ -563,10 +575,18 @@ const Dashboard = () => {
           client: false,
           ambulance: false,
           ref: false,
-          bu: false
+          bu: false,
+          valider: false,
+          formBusinessUnit: false,
+          formClient: false,
+          formProduit: false,
+          formMedecin: false,
+          formVille: false,
+          formAmbulance: false
         });
         // Nettoyer les termes de recherche quand on ferme les dropdowns
         setSearchTerms({});
+        setFormSearchTerms({});
       }
     };
 
@@ -767,6 +787,14 @@ const Dashboard = () => {
     );
   }, []);
 
+  const handleFilterValiderChange = useCallback((valeur) => {
+    setFilterValider(prev => 
+      prev.includes(valeur) 
+        ? prev.filter(v => v !== valeur)
+        : [...prev, valeur]
+    );
+  }, []);
+
 
 
   const handleFiltreChange = (e) => {
@@ -889,6 +917,12 @@ const Dashboard = () => {
         if (caTTCValue > maxValue) return false;
       }
       
+      // Filtre Validation
+      if (filterValider.length > 0) {
+        const validerValue = item.valider ? '1' : '0';
+        if (!filterValider.includes(validerValue)) return false;
+      }
+      
       return true;
     });
   }, [
@@ -906,6 +940,7 @@ const Dashboard = () => {
     filterEtatPaiement, 
     filterCaTTCMin, 
     filterCaTTCMax,
+    filterValider,
     getVilleName,
     getProduitName,
     getClientName,
@@ -1042,6 +1077,18 @@ const Dashboard = () => {
     }
   };
 
+  const handleValider = async (id) => {
+    try {
+      await api.post(`/globales/${id}/valider`);
+      const res = await api.get('/globales');
+      setGlobales(res.data);
+      showNotification('Globale validée avec succès !', 'success');
+    } catch (error) {
+      showNotification('Erreur lors de la validation', 'error');
+      setApiError('Erreur lors de la validation');
+    }
+  };
+
   // OPTIMISATION 4: Pagination mémoisée
   const totalRows = useMemo(() => globalesFiltered.length, [globalesFiltered]);
   const totalPages = useMemo(() => Math.ceil(totalRows / rowsPerPage), [totalRows, rowsPerPage]);
@@ -1054,7 +1101,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement, filterCaTTCMin, filterCaTTCMax]);
+  }, [filterClient, filterAmbulance, filterRef, filterBU, filterDateStart, filterDateEnd, filterVille, filterProduit, filterMedecin, filterEtatPaiement, filterCaTTCMin, filterCaTTCMax, filterValider]);
 
   const handleDownloadExcel = () => {
     // Préparer les données pour l'export
@@ -1128,20 +1175,112 @@ const Dashboard = () => {
             <form onSubmit={handleSubmit} className="data-form" style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'1.5rem'}}>
               {/* Ligne 1 */}
                 <div className="form-group">
-                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="business">🏢</span> Business Unit Type</label>
-                  <select name="businessUnitType" value={formData.businessUnitType} onChange={handleChange} required style={{borderColor: formErrors.businessUnitType ? '#d32f2f' : undefined}}>
-                    <option value="">Sélectionnez un type</option>
-                    {businessUnits.map(bu => <option key={bu.id} value={bu.id}>{bu.businessUnitType}</option>)}
-                  </select>
+                  <label style={{fontWeight:'bold'}}><span role="img" aria-label="business">🏢</span> Business Unit Type *</label>
+                  <div className={`dropdown-container ${dropdownOpen.formBusinessUnit ? 'open' : ''}`} ref={el => dropdownRefs.current.formBusinessUnit = el} style={{borderColor: formErrors.businessUnitType ? '#d32f2f' : undefined}}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, formBusinessUnit: !prev.formBusinessUnit}))}>
+                      <span>{formData.businessUnitType ? businessUnits.find(bu => String(bu.id) === String(formData.businessUnitType))?.businessUnitType || 'Sélectionnez un type' : 'Sélectionnez un type'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formBusinessUnit && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.businessUnit || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, businessUnit: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {businessUnits
+                          .filter(bu => !formSearchTerms.businessUnit || bu.businessUnitType.toLowerCase().includes(formSearchTerms.businessUnit.toLowerCase()))
+                          .map(bu => (
+                          <div 
+                            key={bu.id} 
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleChange({ target: { name: 'businessUnitType', value: bu.id } });
+                              setDropdownOpen(prev => ({...prev, formBusinessUnit: false}));
+                              setFormSearchTerms(prev => ({ ...prev, businessUnit: '' }));
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: String(formData.businessUnitType) === String(bu.id) ? '#e3f2fd' : 'transparent',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.businessUnitType) === String(bu.id) ? '#e3f2fd' : 'transparent'}
+                          >
+                            {bu.businessUnitType}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   {formErrors.businessUnitType && <span style={{color:'#d32f2f', fontSize:'0.9em'}}><span role="img" aria-label="error">❗</span> {formErrors.businessUnitType}</span>}
                 </div>
 
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="client">👤</span> Client</label>
-                  <select name="client" value={isB2C(formData.businessUnitType, businessUnits) ? '' : formData.client} onChange={handleChange} disabled={isB2C(formData.businessUnitType, businessUnits)}>
-                    <option value="">Sélectionnez un client</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.clientFullName}</option>)}
-                  </select>
+                  <div className={`dropdown-container ${dropdownOpen.formClient ? 'open' : ''}`} ref={el => dropdownRefs.current.formClient = el} style={{opacity: isB2C(formData.businessUnitType, businessUnits) ? 0.5 : 1, pointerEvents: isB2C(formData.businessUnitType, businessUnits) ? 'none' : 'auto'}}>
+                    <div className="dropdown-header" onClick={() => !isB2C(formData.businessUnitType, businessUnits) && setDropdownOpen(prev => ({...prev, formClient: !prev.formClient}))}>
+                      <span>{formData.client ? clients.find(c => String(c.id) === String(formData.client))?.clientFullName || 'Sélectionnez un client' : 'Sélectionnez un client'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formClient && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.client || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, client: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {clients
+                          .filter(c => !formSearchTerms.client || c.clientFullName.toLowerCase().includes(formSearchTerms.client.toLowerCase()))
+                          .map(c => (
+                          <div 
+                            key={c.id} 
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleChange({ target: { name: 'client', value: c.id } });
+                              setDropdownOpen(prev => ({...prev, formClient: false}));
+                              setFormSearchTerms(prev => ({ ...prev, client: '' }));
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: String(formData.client) === String(c.id) ? '#e3f2fd' : 'transparent',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.client) === String(c.id) ? '#e3f2fd' : 'transparent'}
+                          >
+                            {c.clientFullName}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="ref">#</span> Référence</label>
@@ -1150,54 +1289,252 @@ const Dashboard = () => {
 
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="pill">💊</span> Produit</label>
-                  <select name="produit" value={formData.produit} onChange={handleChange}>
-                    <option value="">Sélectionnez un produit</option>
-                    {produits.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+                  <div className={`dropdown-container ${dropdownOpen.formProduit ? 'open' : ''}`} ref={el => dropdownRefs.current.formProduit = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, formProduit: !prev.formProduit}))}>
+                      <span>{formData.produit ? produits.find(p => String(p.id) === String(formData.produit))?.name || 'Sélectionnez un produit' : 'Sélectionnez un produit'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formProduit && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.produit || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, produit: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {produits
+                          .filter(p => !formSearchTerms.produit || p.name.toLowerCase().includes(formSearchTerms.produit.toLowerCase()))
+                          .map(p => (
+                          <div 
+                            key={p.id} 
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleChange({ target: { name: 'produit', value: p.id } });
+                              setDropdownOpen(prev => ({...prev, formProduit: false}));
+                              setFormSearchTerms(prev => ({ ...prev, produit: '' }));
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: String(formData.produit) === String(p.id) ? '#e3f2fd' : 'transparent',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.produit) === String(p.id) ? '#e3f2fd' : 'transparent'}
+                          >
+                            {p.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}>
                     <span role="img" aria-label="doctor">🧑‍⚕️</span> 
                     {isInfirmierAct(formData.produit, produits) ? 'Infirmier' : 'Médecin'}
                   </label>
-                  <select 
-                    name="medecin" 
-                    value={formData.medecin} 
-                    onChange={handleChange} 
-                    disabled={!isMedecinRequired(formData.produit, produits)}
-                  >
-                    <option value="">Sélectionnez {isInfirmierAct(formData.produit, produits) ? 'un infirmier' : 'un médecin'}</option>
-                    {isInfirmierAct(formData.produit, produits) 
-                      ? infirmiers
-                          .sort((a, b) => a.nom.localeCompare(b.nom))
-                          .map(i => (
-                            <option key={i.id} value={i.id}>
-                              {i.nom}
-                            </option>
-                          ))
-                      : medciens
-                          .sort((a, b) => a.name.localeCompare(b.name))
-                          .map(m => (
-                            <option key={m.id} value={m.id}>
-                              {m.name}
-                            </option>
-                          ))
-                    }
-                  </select>
+                  <div className={`dropdown-container ${dropdownOpen.formMedecin ? 'open' : ''}`} ref={el => dropdownRefs.current.formMedecin = el} style={{opacity: !isMedecinRequired(formData.produit, produits) ? 0.5 : 1, pointerEvents: !isMedecinRequired(formData.produit, produits) ? 'none' : 'auto'}}>
+                    <div className="dropdown-header" onClick={() => isMedecinRequired(formData.produit, produits) && setDropdownOpen(prev => ({...prev, formMedecin: !prev.formMedecin}))}>
+                      <span>
+                        {formData.medecin 
+                          ? (isInfirmierAct(formData.produit, produits) 
+                              ? infirmiers.find(i => String(i.id) === String(formData.medecin))?.nom
+                              : medciens.find(m => String(m.id) === String(formData.medecin))?.name) || `Sélectionnez ${isInfirmierAct(formData.produit, produits) ? 'un infirmier' : 'un médecin'}`
+                          : `Sélectionnez ${isInfirmierAct(formData.produit, produits) ? 'un infirmier' : 'un médecin'}`
+                        }
+                      </span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formMedecin && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.medecin || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, medecin: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {isInfirmierAct(formData.produit, produits) 
+                          ? infirmiers
+                              .filter(i => !formSearchTerms.medecin || i.nom.toLowerCase().includes(formSearchTerms.medecin.toLowerCase()))
+                              .sort((a, b) => a.nom.localeCompare(b.nom))
+                              .map(i => (
+                                <div 
+                                  key={i.id} 
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    handleChange({ target: { name: 'medecin', value: i.id } });
+                                    setDropdownOpen(prev => ({...prev, formMedecin: false}));
+                                    setFormSearchTerms(prev => ({ ...prev, medecin: '' }));
+                                  }}
+                                  style={{
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    backgroundColor: String(formData.medecin) === String(i.id) ? '#e3f2fd' : 'transparent',
+                                    transition: 'background-color 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.medecin) === String(i.id) ? '#e3f2fd' : 'transparent'}
+                                >
+                                  {i.nom}
+                                </div>
+                              ))
+                          : medciens
+                              .filter(m => !formSearchTerms.medecin || m.name.toLowerCase().includes(formSearchTerms.medecin.toLowerCase()))
+                              .sort((a, b) => a.name.localeCompare(b.name))
+                              .map(m => (
+                                <div 
+                                  key={m.id} 
+                                  className="dropdown-item"
+                                  onClick={() => {
+                                    handleChange({ target: { name: 'medecin', value: m.id } });
+                                    setDropdownOpen(prev => ({...prev, formMedecin: false}));
+                                    setFormSearchTerms(prev => ({ ...prev, medecin: '' }));
+                                  }}
+                                  style={{
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    backgroundColor: String(formData.medecin) === String(m.id) ? '#e3f2fd' : 'transparent',
+                                    transition: 'background-color 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.medecin) === String(m.id) ? '#e3f2fd' : 'transparent'}
+                                >
+                                  {m.name}
+                                </div>
+                              ))
+                        }
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="city">📍</span> Ville</label>
-                  <select name="ville" value={formData.ville} onChange={handleChange}>
-                    <option value="">Sélectionnez une ville</option>
-                    {villes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                  </select>
+                  <div className={`dropdown-container ${dropdownOpen.formVille ? 'open' : ''}`} ref={el => dropdownRefs.current.formVille = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, formVille: !prev.formVille}))}>
+                      <span>{formData.ville ? villes.find(v => String(v.id) === String(formData.ville))?.name || 'Sélectionnez une ville' : 'Sélectionnez une ville'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formVille && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.ville || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, ville: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {villes
+                          .filter(v => !formSearchTerms.ville || v.name.toLowerCase().includes(formSearchTerms.ville.toLowerCase()))
+                          .map(v => (
+                          <div 
+                            key={v.id} 
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleChange({ target: { name: 'ville', value: v.id } });
+                              setDropdownOpen(prev => ({...prev, formVille: false}));
+                              setFormSearchTerms(prev => ({ ...prev, ville: '' }));
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: String(formData.ville) === String(v.id) ? '#e3f2fd' : 'transparent',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.ville) === String(v.id) ? '#e3f2fd' : 'transparent'}
+                          >
+                            {v.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label style={{fontWeight:'bold'}}><span role="img" aria-label="ambulance">🚑</span> Ambulance</label>
-                  <select name="ambulance" value={isAmbulanceRequired(formData.produit, produits) ? formData.ambulance : ''} onChange={handleChange} disabled={!isAmbulanceRequired(formData.produit, produits)}>
-                    <option value="">Sélectionnez une ambulance</option>
-                    {ambulances.map(a => <option key={a.id} value={a.id}>{a.numberPlate}</option>)}
-                  </select>
+                  <div className={`dropdown-container ${dropdownOpen.formAmbulance ? 'open' : ''}`} ref={el => dropdownRefs.current.formAmbulance = el} style={{opacity: !isAmbulanceRequired(formData.produit, produits) ? 0.5 : 1, pointerEvents: !isAmbulanceRequired(formData.produit, produits) ? 'none' : 'auto'}}>
+                    <div className="dropdown-header" onClick={() => isAmbulanceRequired(formData.produit, produits) && setDropdownOpen(prev => ({...prev, formAmbulance: !prev.formAmbulance}))}>
+                      <span>{formData.ambulance ? ambulances.find(a => String(a.id) === String(formData.ambulance))?.numberPlate || 'Sélectionnez une ambulance' : 'Sélectionnez une ambulance'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.formAmbulance && (
+                      <div className="dropdown-content">
+                        <input
+                          type="text"
+                          placeholder="Rechercher..."
+                          value={formSearchTerms.ambulance || ''}
+                          onChange={(e) => setFormSearchTerms(prev => ({ ...prev, ambulance: e.target.value }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            border: 'none',
+                            borderBottom: '1px solid #e0e0e0',
+                            fontSize: '0.9rem',
+                            outline: 'none',
+                            backgroundColor: '#f8f9fa',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {ambulances
+                          .filter(a => !formSearchTerms.ambulance || a.numberPlate.toLowerCase().includes(formSearchTerms.ambulance.toLowerCase()))
+                          .map(a => (
+                          <div 
+                            key={a.id} 
+                            className="dropdown-item"
+                            onClick={() => {
+                              handleChange({ target: { name: 'ambulance', value: a.id } });
+                              setDropdownOpen(prev => ({...prev, formAmbulance: false}));
+                              setFormSearchTerms(prev => ({ ...prev, ambulance: '' }));
+                            }}
+                            style={{
+                              padding: '8px 12px',
+                              cursor: 'pointer',
+                              backgroundColor: String(formData.ambulance) === String(a.id) ? '#e3f2fd' : 'transparent',
+                              transition: 'background-color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = String(formData.ambulance) === String(a.id) ? '#e3f2fd' : 'transparent'}
+                          >
+                            {a.numberPlate}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               {/* Ligne 2 */}
               
@@ -1495,6 +1832,36 @@ const Dashboard = () => {
                     )}
                   </div>
                 </div>
+
+                <div className="filter-group">
+                  <label>✅ Validation</label>
+                  <div className={`dropdown-container ${dropdownOpen.valider ? 'open' : ''}`} ref={el => dropdownRefs.current.valider = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, valider: !prev.valider}))}>
+                      <span>{filterValider.length > 0 ? `${filterValider.length} sélectionné(s)` : 'Tous les statuts'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.valider && (
+                      <div className="dropdown-content">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterValider.includes('1')}
+                            onChange={() => handleFilterValiderChange('1')}
+                          />
+                          <span>✅ Validé</span>
+                        </label>
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterValider.includes('0')}
+                            onChange={() => handleFilterValiderChange('0')}
+                          />
+                          <span>⚠️ Non validé</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Deuxième ligne - Filtres secondaires */}
@@ -1786,6 +2153,7 @@ const Dashboard = () => {
                       setFilterEtatPaiement([]);
                       setFilterCaTTCMin('');
                       setFilterCaTTCMax('');
+                      setFilterValider([]);
                       
                       setFiltres(prev => ({ ...prev, recherche: '' }));
                     }}
@@ -1842,6 +2210,33 @@ const Dashboard = () => {
                       <td>{item.etatdePaiment}</td>
                       <td>
                         <div style={{display:'flex', gap:'8px', justifyContent:'center', alignItems:'center', flexWrap:'nowrap'}}>
+                          {!item.valider && (
+                            <button 
+                              onClick={() => handleValider(item.id)}
+                              title="Valider"
+                              style={{
+                                width: 32,
+                                height: 32,
+                                minWidth: 32,
+                                minHeight: 32,
+                                boxSizing: 'border-box',
+                                lineHeight: '32px',
+                                padding: 0,
+                                borderRadius: '50%',
+                                background: '#e8f5e9',
+                                color: '#2e7d32',
+                                border: '1.5px solid #81c784',
+                                display: 'inline-flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                cursor: 'pointer', 
+                                fontSize: '16px', 
+                                fontWeight: 600
+                              }}
+                            >
+                              ✓
+                            </button>
+                          )}
                           <button 
                             onClick={() => handleEdit(item)}
                             title="Modifier"
