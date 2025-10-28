@@ -1833,35 +1833,6 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="filter-group">
-                  <label>✅ Validation</label>
-                  <div className={`dropdown-container ${dropdownOpen.valider ? 'open' : ''}`} ref={el => dropdownRefs.current.valider = el}>
-                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, valider: !prev.valider}))}>
-                      <span>{filterValider.length > 0 ? `${filterValider.length} sélectionné(s)` : 'Tous les statuts'}</span>
-                      <span className="dropdown-arrow">▼</span>
-                    </div>
-                    {dropdownOpen.valider && (
-                      <div className="dropdown-content">
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filterValider.includes('1')}
-                            onChange={() => handleFilterValiderChange('1')}
-                          />
-                          <span>✅ Validé</span>
-                        </label>
-                        <label className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filterValider.includes('0')}
-                            onChange={() => handleFilterValiderChange('0')}
-                          />
-                          <span>⚠️ Non validé</span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
 
               {/* Deuxième ligne - Filtres secondaires */}
@@ -2134,7 +2105,35 @@ const Dashboard = () => {
                     step="0.01"
                   />
                 </div>
-
+                <div className="filter-group">
+                  <label>✅ Validation</label>
+                  <div className={`dropdown-container ${dropdownOpen.valider ? 'open' : ''}`} ref={el => dropdownRefs.current.valider = el}>
+                    <div className="dropdown-header" onClick={() => setDropdownOpen(prev => ({...prev, valider: !prev.valider}))}>
+                      <span>{filterValider.length > 0 ? `${filterValider.length} sélectionné(s)` : 'Tous les statuts'}</span>
+                      <span className="dropdown-arrow">▼</span>
+                    </div>
+                    {dropdownOpen.valider && (
+                      <div className="dropdown-content">
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterValider.includes('1')}
+                            onChange={() => handleFilterValiderChange('1')}
+                          />
+                          <span>✅ Validé</span>
+                        </label>
+                        <label className="checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filterValider.includes('0')}
+                            onChange={() => handleFilterValiderChange('0')}
+                          />
+                          <span>⚠️ Non validé</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="filter-group filter-actions">
                   <label>&nbsp;</label>
                   <button
