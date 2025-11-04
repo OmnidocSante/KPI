@@ -44,6 +44,13 @@ const Clients = () => {
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState("");
+
+  // Calculer les clients filtrés
+  const filteredClients = clients.filter(client =>
+    (client.clientFullName || '').toLowerCase().includes(search.toLowerCase()) ||
+    (client.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (client.primaryContactName || '').toLowerCase().includes(search.toLowerCase())
+  );
   
   // États pour la gestion des contacts
   const [showContactsModal, setShowContactsModal] = useState(false);
@@ -264,8 +271,21 @@ const Clients = () => {
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>👥 Liste des clients</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredClients.length} {filteredClients.length <= 1 ? 'client' : 'clients'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
@@ -334,17 +354,9 @@ const Clients = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {clients.filter(client =>
-                      (client.clientFullName || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (client.email || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (client.primaryContactName || '').toLowerCase().includes(search.toLowerCase())
-                    ).length === 0 ? (
+                    {filteredClients.length === 0 ? (
                       <tr><td colSpan="6">Aucun client trouvé.</td></tr>
-                    ) : clients.filter(client =>
-                      (client.clientFullName || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (client.email || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (client.primaryContactName || '').toLowerCase().includes(search.toLowerCase())
-                    ).map(client => (
+                    ) : filteredClients.map(client => (
                       <tr key={client.id}>
                         <td>{client.id}</td>
                         <td>{client.clientFullName}</td>

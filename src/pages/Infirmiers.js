@@ -33,6 +33,13 @@ const Infirmiers = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState("");
 
+  // Calculer les infirmiers filtrés
+  const filteredInfirmiers = infirmiers.filter(infirmier =>
+    (infirmier.nom || '').toLowerCase().includes(search.toLowerCase()) ||
+    (infirmier.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+    (infirmier.ville || '').toLowerCase().includes(search.toLowerCase())
+  );
+
   const loadInfirmiers = async () => {
     setLoading(true);
     try {
@@ -106,8 +113,21 @@ const Infirmiers = () => {
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>💉 Liste des infirmiers</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredInfirmiers.length} {filteredInfirmiers.length <= 1 ? 'infirmier' : 'infirmiers'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
@@ -178,17 +198,9 @@ const Infirmiers = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {infirmiers.filter(infirmier =>
-                      (infirmier.nom || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (infirmier.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (infirmier.ville || '').toLowerCase().includes(search.toLowerCase())
-                    ).length === 0 ? (
+                    {filteredInfirmiers.length === 0 ? (
                       <tr><td colSpan="8">Aucun infirmier trouvé.</td></tr>
-                    ) : infirmiers.filter(infirmier =>
-                      (infirmier.nom || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (infirmier.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (infirmier.ville || '').toLowerCase().includes(search.toLowerCase())
-                    ).map(infirmier => (
+                    ) : filteredInfirmiers.map(infirmier => (
                       <tr key={infirmier.id}>
                         <td>{infirmier.id}</td>
                         <td>{infirmier.nom || ''}</td>

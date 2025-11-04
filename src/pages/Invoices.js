@@ -182,9 +182,22 @@ const Invoices = () => {
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '1rem' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', gap:12 }}>
-                <h2 style={{ margin:0, fontSize:'1.25rem', color:'#2c3e50' }}>📥 Réception des factures
-                  <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{sorted.length}</span>
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ margin:0, fontSize:'1.25rem', color:'#2c3e50' }}>📥 Réception des factures</h2>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                    color: 'white',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    Total: {sorted.length} {sorted.length <= 1 ? 'facture' : 'factures'}
+                  </span>
+                </div>
                 <button onClick={openAddModal} style={{ marginLeft:'auto', background:'linear-gradient(45deg, #1976d2, #2196f3)', color:'#fff', border:'none', height:34, padding:'0 12px', borderRadius:6, fontWeight:600, cursor:'pointer',width:'10%' }}>+ Ajouter</button>
               </div>
             </div>
@@ -287,9 +300,22 @@ const Invoices = () => {
 
           <div className="table-section">
             <div className="table-header" style={{ marginBottom:'0.5rem' }}>
-              <h3 style={{ margin:0, color:'#2c3e50' }}>✅ Factures payées
-                <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{paid.length}</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <h3 style={{ margin:0, color:'#2c3e50' }}>✅ Factures payées</h3>
+                <span style={{
+                  background: 'linear-gradient(135deg, #43a047, #66bb6a)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {paid.length} {paid.length <= 1 ? 'facture payée' : 'factures payées'}
+                </span>
+              </div>
             </div>
             <div className="table-container">
               <table className="data-table">

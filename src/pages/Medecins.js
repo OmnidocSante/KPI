@@ -33,6 +33,13 @@ const Medecins = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState("");
 
+  // Calculer les médecins filtrés
+  const filteredMedecins = medecins.filter(medecin =>
+    (medecin.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (medecin.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+    (medecin.ville || '').toLowerCase().includes(search.toLowerCase())
+  );
+
   const loadMedecins = async () => {
     setLoading(true);
     try {
@@ -106,8 +113,21 @@ const Medecins = () => {
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>🩺 Liste des médecins</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredMedecins.length} {filteredMedecins.length <= 1 ? 'médecin' : 'médecins'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
@@ -178,17 +198,9 @@ const Medecins = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {medecins.filter(medecin =>
-                      (medecin.name || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.ville || '').toLowerCase().includes(search.toLowerCase())
-                    ).length === 0 ? (
+                    {filteredMedecins.length === 0 ? (
                       <tr><td colSpan="8">Aucun médecin trouvé.</td></tr>
-                    ) : medecins.filter(medecin =>
-                      (medecin.name || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-                      (medecin.ville || '').toLowerCase().includes(search.toLowerCase())
-                    ).map(medecin => (
+                    ) : filteredMedecins.map(medecin => (
                       <tr key={medecin.id}>
                         <td>{medecin.id}</td>
                         <td>{medecin.name || ''}</td>

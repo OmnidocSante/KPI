@@ -434,8 +434,21 @@ const ClientsKPI = () => {
           {/* Section Tableau */}
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>📊 Module Client KPI</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredClients.length} {filteredClients.length <= 1 ? 'client' : 'clients'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'nowrap', overflowX: 'auto' }}>
                 <div style={{ position: 'relative' }}>

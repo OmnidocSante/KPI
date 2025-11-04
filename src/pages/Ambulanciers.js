@@ -107,9 +107,22 @@ const Ambulanciers = () => {
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '1rem', marginRight: '-2rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' , width:'100%'}}>
-                <h2 style={{ fontSize: '1.25rem', color: '#2c3e50', margin: 0, whiteSpace:'nowrap' }}>🚑 Ambulanciers
-                  <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{filtered.length}</span>
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.25rem', color: '#2c3e50', margin: 0, whiteSpace:'nowrap' }}>🚑 Ambulanciers</h2>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                    color: 'white',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    Total: {filtered.length} {filtered.length <= 1 ? 'ambulancier' : 'ambulanciers'}
+                  </span>
+                </div>
                 <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flex:1 }}>
                   <div style={{ flex: '2 1 550', position: 'relative', background:'#f8fafc', border:'1px solid #e3e6f0', borderRadius:6, height: 34, width: '550px' }}>
                     <input type="text" placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} style={{ padding: '0.4rem 0.75rem', paddingLeft: '2rem', border: 'none', outline:'none', background:'transparent', width:'100%' }} />

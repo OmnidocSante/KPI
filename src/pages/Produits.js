@@ -30,6 +30,11 @@ const Produits = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [search, setSearch] = useState("");
 
+  // Calculer les produits filtrés
+  const filteredProduits = produits.filter(produit =>
+    (produit.name || '').toLowerCase().includes(search.toLowerCase())
+  );
+
   const loadProduits = async () => {
     setLoading(true);
     try {
@@ -95,8 +100,21 @@ const Produits = () => {
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>📦 Liste des produits</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredProduits.length} {filteredProduits.length <= 1 ? 'produit' : 'produits'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
@@ -162,13 +180,9 @@ const Produits = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {produits.filter(produit =>
-                      (produit.name || '').toLowerCase().includes(search.toLowerCase())
-                    ).length === 0 ? (
+                    {filteredProduits.length === 0 ? (
                       <tr><td colSpan="3">Aucun produit trouvé.</td></tr>
-                    ) : produits.filter(produit =>
-                      (produit.name || '').toLowerCase().includes(search.toLowerCase())
-                    ).map(produit => (
+                    ) : filteredProduits.map(produit => (
                       <tr key={produit.id}>
                         <td>{produit.id}</td>
                         <td>{produit.name || ''}</td>

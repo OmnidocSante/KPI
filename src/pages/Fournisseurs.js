@@ -65,7 +65,22 @@ const Fournisseurs = () => {
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '1rem' }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%', gap:12 }}>
-                <h2 style={{ margin:0, fontSize:'1.25rem', color:'#2c3e50' }}>🏭 Fournisseurs <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{filtered.length}</span></h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ margin:0, fontSize:'1.25rem', color:'#2c3e50' }}>🏭 Fournisseurs</h2>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                    color: 'white',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                  }}>
+                    Total: {filtered.length} {filtered.length <= 1 ? 'fournisseur' : 'fournisseurs'}
+                  </span>
+                </div>
                 <div style={{ display:'flex', alignItems:'center', gap:12, flex:1 }}>
                   <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher..." style={{ flex:1, height:34, border:'1px solid #e3e6f0', borderRadius:6, padding:'0 10px' }} />
                   <button onClick={openAdd} style={{ background:'linear-gradient(45deg,#1976d2,#2196f3)', color:'#fff', border:'none', height:34, padding:'0 12px', borderRadius:6, fontWeight:600, cursor:'pointer',width:'10%' }}>+ Ajouter</button>

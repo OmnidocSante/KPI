@@ -61,11 +61,15 @@ const Charges = () => {
   const [filterVilleIds, setFilterVilleIds] = useState([]);
   const [filterPaidStatuses, setFilterPaidStatuses] = useState([]);
   const [filterFournisseurIds, setFilterFournisseurIds] = useState([]);
+  const [filterAmbulanceIds, setFilterAmbulanceIds] = useState([]);
+  const [filterDateStart, setFilterDateStart] = useState('');
+  const [filterDateEnd, setFilterDateEnd] = useState('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showTypeFilter, setShowTypeFilter] = useState(false);
   const [showVilleFilter, setShowVilleFilter] = useState(false);
   const [showPaidFilter, setShowPaidFilter] = useState(false);
   const [showFournisseurFilter, setShowFournisseurFilter] = useState(false);
+  const [showAmbulanceFilter, setShowAmbulanceFilter] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editChargeItem, setEditChargeItem] = useState(null);
@@ -99,6 +103,7 @@ const Charges = () => {
   const [ambulanciers, setAmbulanciers] = useState([]);
   const [fournisseurs, setFournisseurs] = useState([]);
   const [fournisseurSearch, setFournisseurSearch] = useState('');
+  const [ambulanceSearch, setAmbulanceSearch] = useState('');
 
   const [showAutorouteModal, setShowAutorouteModal] = useState(false);
   const [importMode, setImportMode] = useState('autoroute'); // 'autoroute' | 'carburant'
@@ -210,6 +215,7 @@ const Charges = () => {
         setShowVilleFilter(false);
         setShowPaidFilter(false);
         setShowFournisseurFilter(false);
+        setShowAmbulanceFilter(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
@@ -427,6 +433,57 @@ const Charges = () => {
         return filterFournisseurIds.includes(String(c.fournisseurId));
       })
       .filter(c => {
+        if (filterAmbulanceIds.length === 0) return true;
+        return filterAmbulanceIds.includes(String(c.ambulanceId));
+      })
+      .filter(c => {
+        if (!filterDateStart && !filterDateEnd) return true;
+        
+        const startDate = filterDateStart ? new Date(filterDateStart) : null;
+        const endDate = filterDateEnd ? new Date(filterDateEnd) : null;
+        
+        // Pour les charges récurrentes, vérifier si elles chevauchent l'intervalle
+        if (c.type === 'recurring') {
+          const chargeStart = c.startDate ? new Date(c.startDate) : null;
+          const chargeEnd = c.endDate ? new Date(c.endDate) : null;
+          
+          if (chargeStart && chargeEnd) {
+            // Vérifier si l'intervalle de la charge chevauche l'intervalle de filtre
+            // Les deux dates sont incluses
+            if (startDate && endDate) {
+              return (chargeStart <= endDate && chargeEnd >= startDate);
+            } else if (startDate) {
+              return chargeEnd >= startDate;
+            } else if (endDate) {
+              return chargeStart <= endDate;
+            }
+          } else if (chargeStart) {
+            // Pas de date de fin, vérifier si startDate est dans l'intervalle
+            if (startDate && endDate) {
+              return chargeStart >= startDate && chargeStart <= endDate;
+            } else if (startDate) {
+              return chargeStart >= startDate;
+            } else if (endDate) {
+              return chargeStart <= endDate;
+            }
+          }
+          return true;
+        } else {
+          // Pour les charges variables, vérifier si variableDate est dans l'intervalle
+          const variableDate = c.variableDate ? new Date(c.variableDate) : null;
+          if (!variableDate) return true;
+          
+          if (startDate && endDate) {
+            return variableDate >= startDate && variableDate <= endDate;
+          } else if (startDate) {
+            return variableDate >= startDate;
+          } else if (endDate) {
+            return variableDate <= endDate;
+          }
+        }
+        return true;
+      })
+      .filter(c => {
         if (filterPaidStatuses.length === 0) return true;
         const total = Number(c.totalInstallments || 0);
         const paid = Number(c.paidInstallments || 0);
@@ -457,7 +514,7 @@ const Charges = () => {
         ].filter(Boolean).join(' ').toLowerCase();
         return searchableText.includes(s);
       });
-  }, [charges, search, filterCategoryIds, filterTypes, filterVilleIds, filterFournisseurIds, filterPaidStatuses]);
+  }, [charges, search, filterCategoryIds, filterTypes, filterVilleIds, filterFournisseurIds, filterAmbulanceIds, filterDateStart, filterDateEnd, filterPaidStatuses]);
 
   return (
     <div className="dashboard-layout">
@@ -467,38 +524,52 @@ const Charges = () => {
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' , width:'100%'}}>
-                <h2 style={{ fontSize: '1.25rem', color: '#2c3e50', margin: 0, whiteSpace:'nowrap' }}>💸 Liste des charges
-                  <span style={{ marginLeft: 8, fontSize: '0.85rem', color: '#64748b', background:'#eef2f7', padding: '1px 6px', borderRadius: 999 }}>{filteredCharges.length}</span>
-                </h2>
-                <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flex:1, flexWrap:'wrap' }}>
-                  <div style={{
-                    position: 'relative',
-                    background:'#f8fafc',
-                    border:'1px solid #e3e6f0',
-                    borderRadius:6,
-                    height: 34,
-                    width: 220
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '1.25rem', color: '#2c3e50', margin: 0, whiteSpace:'nowrap' }}>💸 Liste des charges</h2>
+                  <span style={{
+                    background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                    color: 'white',
+                    padding: '0.4rem 1rem',
+                    borderRadius: '20px',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                   }}>
-                    <input
-                      type="text"
-                      placeholder="Rechercher..."
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      style={{
-                        padding: '0.4rem 0.75rem',
-                        paddingLeft: '2rem',
-                        border: 'none',
-                        outline:'none',
-                        background:'transparent',
-                        width:'100%',
-                        fontSize: '0.9rem'
-                      }}
-                    />
-                    <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', fontSize:14 }}>🔍</span>
-                  </div>
+                    Total: {filteredCharges.length} {filteredCharges.length <= 1 ? 'charge' : 'charges'}
+                  </span>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flex:1, flexWrap:'wrap', justifyContent:'space-between' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flexWrap:'wrap', flex:1 }}>
+                    <div style={{
+                      position: 'relative',
+                      background:'#f8fafc',
+                      border:'1px solid #e3e6f0',
+                      borderRadius:6,
+                      height: 34,
+                      width: 220
+                    }}>
+                      <input
+                        type="text"
+                        placeholder="Rechercher..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        style={{
+                          padding: '0.4rem 0.75rem',
+                          paddingLeft: '2rem',
+                          border: 'none',
+                          outline:'none',
+                          background:'transparent',
+                          width:'100%',
+                          fontSize: '0.9rem'
+                        }}
+                      />
+                      <span style={{ position:'absolute', left:8, top:'50%', transform:'translateY(-50%)', color:'#94a3b8', fontSize:14 }}>🔍</span>
+                    </div>
 
-                  {/* Filtre Catégories */}
-                  <div style={{ position: 'relative', minWidth: 200 }} data-filter-dropdown>
+                    {/* Filtre Catégories */}
+                    <div style={{ position: 'relative', minWidth: 200 }} data-filter-dropdown>
                     <button
                       onClick={() => setShowCategoryFilter(!showCategoryFilter)}
                       style={{ 
@@ -803,6 +874,222 @@ const Charges = () => {
                     )}
                   </div>
 
+                  {/* Filtre Ambulances */}
+                  <div style={{ position: 'relative', minWidth: 160 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowAmbulanceFilter(!showAmbulanceFilter)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterAmbulanceIds.length > 0 ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 160,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterAmbulanceIds.length > 0 ? 600 : 400,
+                        color: filterAmbulanceIds.length > 0 ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Ambulances {filterAmbulanceIds.length > 0 ? `(${filterAmbulanceIds.length})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showAmbulanceFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 240,
+                        maxHeight: 350,
+                        overflowY: 'auto'
+                      }}>
+                        <div style={{ padding: '8px' }}>
+                          {/* Champ de recherche */}
+                          <div style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #e3e6f0' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher une ambulance..."
+                              value={ambulanceSearch}
+                              onChange={e => setAmbulanceSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.4rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: '16px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
+                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
+                            <input
+                              type="checkbox"
+                              checked={filterAmbulanceIds.length === 0}
+                              onChange={() => setFilterAmbulanceIds([])}
+                              style={{ marginRight: 8 }}
+                            />
+                            <span style={{ fontWeight: 600 }}>Toutes</span>
+                          </label>
+                          {ambulances
+                            .filter(a => {
+                              if (!ambulanceSearch) return true;
+                              const searchLower = ambulanceSearch.toLowerCase();
+                              return (a.numberPlate || '').toLowerCase().includes(searchLower) ||
+                                     (a.number || '').toString().includes(searchLower);
+                            })
+                            .map(a => (
+                            <label key={a.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                              onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
+                              onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={filterAmbulanceIds.includes(String(a.id))}
+                                onChange={e => {
+                                  if (e.target.checked) {
+                                    setFilterAmbulanceIds([...filterAmbulanceIds, String(a.id)]);
+                                  } else {
+                                    setFilterAmbulanceIds(filterAmbulanceIds.filter(id => id !== String(a.id)));
+                                  }
+                                }}
+                                style={{ marginRight: 8 }}
+                              />
+                              {a.numberPlate || `Ambulance ${a.id}`}
+                            </label>
+                          ))}
+                          {ambulances.filter(a => {
+                            if (!ambulanceSearch) return false;
+                            const searchLower = ambulanceSearch.toLowerCase();
+                            return (a.numberPlate || '').toLowerCase().includes(searchLower) ||
+                                   (a.number || '').toString().includes(searchLower);
+                          }).length === 0 && ambulanceSearch && (
+                            <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                              Aucune ambulance trouvée
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Filtre Dates */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 320 }}>
+                    <div style={{ position: 'relative', width: '150px' }}>
+                      <input
+                        type="date"
+                        placeholder="Date début"
+                        value={filterDateStart}
+                        onChange={e => setFilterDateStart(e.target.value)}
+                        style={{
+                          padding: '0.3rem 0.55rem',
+                          height: 34,
+                          borderRadius: 6,
+                          border: '1px solid #e3e6f0',
+                          background: filterDateStart ? '#e3f2fd' : '#fff',
+                          fontSize: '0.9rem',
+                          width: '100%',
+                          cursor: 'pointer',
+                          fontWeight: filterDateStart ? 600 : 400,
+                          color: filterDateStart ? '#1976d2' : '#333'
+                        }}
+                      />
+                      {filterDateStart && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          left: '8px',
+                          background: '#1976d2',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 600
+                        }}>Début</span>
+                      )}
+                    </div>
+                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>→</span>
+                    <div style={{ position: 'relative', width: '150px' }}>
+                      <input
+                        type="date"
+                        placeholder="Date fin"
+                        value={filterDateEnd}
+                        onChange={e => setFilterDateEnd(e.target.value)}
+                        style={{
+                          padding: '0.3rem 0.55rem',
+                          height: 34,
+                          borderRadius: 6,
+                          border: '1px solid #e3e6f0',
+                          background: filterDateEnd ? '#e3f2fd' : '#fff',
+                          fontSize: '0.9rem',
+                          width: '100%',
+                          cursor: 'pointer',
+                          fontWeight: filterDateEnd ? 600 : 400,
+                          color: filterDateEnd ? '#1976d2' : '#333'
+                        }}
+                      />
+                      {filterDateEnd && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-8px',
+                          left: '8px',
+                          background: '#1976d2',
+                          color: 'white',
+                          fontSize: '0.7rem',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 600
+                        }}>Fin</span>
+                      )}
+                    </div>
+                    {(filterDateStart || filterDateEnd) && (
+                      <button
+                        onClick={() => {
+                          setFilterDateStart('');
+                          setFilterDateEnd('');
+                        }}
+                        style={{
+                          padding: '0.3rem 0.6rem',
+                          height: 34,
+                          borderRadius: 6,
+                          border: '1px solid #e3e6f0',
+                          background: '#fff',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        title="Réinitialiser les dates"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
                   {/* Filtre Statuts */}
                   <div style={{ position: 'relative', minWidth: 130 }} data-filter-dropdown>
                     <button
@@ -889,9 +1176,9 @@ const Charges = () => {
                       </div>
                     )}
                   </div>
-                
-                </div>
-                <button
+
+                  {/* Bouton Ajouter */}
+                  <button
                     onClick={openAddModal}
                     style={{
                       background: 'linear-gradient(45deg, #1976d2, #2196f3)',
@@ -909,7 +1196,8 @@ const Charges = () => {
                       cursor: 'pointer',
                       boxShadow: '0 2px 4px rgba(25, 118, 210, 0.1)',
                       transition: 'all 0.2s ease',
-                      marginLeft: 'auto'
+                      marginLeft: 'auto',
+                      flexShrink: 0
                     }}
                     onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
                     onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
@@ -917,6 +1205,8 @@ const Charges = () => {
                     <span style={{ fontSize: '1rem' }}>＋</span>
                     Ajouter
                   </button>
+                  </div>
+                </div>
               </div>
             </div>
 
