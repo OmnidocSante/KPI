@@ -8,6 +8,7 @@ router.use(verifyToken);
 
 // Routes CRUD pour les clients
 router.get('/', clientController.getAllClients);
+router.get('/kpis', clientController.getClientKPIs);
 router.get('/search', clientController.searchClients);
 router.get('/:id', clientController.getClientById);
 router.post('/', clientController.createClient);
