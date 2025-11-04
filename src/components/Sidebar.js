@@ -15,6 +15,7 @@ const Sidebar = () => {
    { path: '/data', label: 'Données', icon: '📈' },
     { path: '/ambulances', label: 'Ambulances', icon: '🚑' },
     { path: '/clients', label: 'Clients', icon: '👥' },
+    { path: '/clients-kpi', label: 'Clients KPI', icon: '📊' },
     { path: '/medecins', label: 'Médecins', icon: '🩺' },
     { path: '/infirmiers', label: 'Infirmiers', icon: '👨‍⚕️' },
     { path: '/ambulanciers', label: 'Ambulanciers', icon: '🚑' },

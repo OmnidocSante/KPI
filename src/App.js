@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Data from './pages/Data';
 import Ambulances from './pages/Ambulances';
 import Clients from './pages/Clients';
+import ClientsKPI from './pages/ClientsKPI';
 import Medecins from './pages/Medecins';
 import Produits from './pages/Produits';
 import Infirmiers from './pages/Infirmiers';
@@ -40,6 +41,10 @@ function App() {
         <Route 
           path="/clients" 
           element={isAuthenticated ? <Clients /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/clients-kpi" 
+          element={isAuthenticated ? <ClientsKPI /> : <Navigate to="/login" />} 
         />
         <Route 
           path="/medecins" 

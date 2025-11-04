@@ -80,6 +80,7 @@ export const createClient = (data) => api.post('/clients', data);
 export const updateClient = (id, data) => api.put(`/clients/${id}`, data);
 export const deleteClient = (id) => api.delete(`/clients/${id}`);
 export const searchClients = (query) => api.get(`/clients/search?query=${encodeURIComponent(query)}`);
+export const fetchClientKPIs = () => api.get('/clients/kpis');
 
 // Fonctions pour l'API Contacts des clients
 export const fetchClientContacts = (clientId) => api.get(`/clients/${clientId}/contacts`);
