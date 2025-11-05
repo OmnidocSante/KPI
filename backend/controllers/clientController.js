@@ -317,36 +317,39 @@ const getClientKPIs = async (req, res) => {
       GROUP BY typeContrat
     `);
 
-    // Évolution du portefeuille client par mois
+    // Évolution du portefeuille client par mois (compatibilité ONLY_FULL_GROUP_BY)
     const [evolutionByMonth] = await db.query(`
-      SELECT 
-        DATE_FORMAT(createdAt, '%Y-%m') as month,
-        COUNT(*) as count
-      FROM Clients 
-      WHERE destroyTime IS NULL
-      GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+      SELECT month, COUNT(*) AS count
+      FROM (
+        SELECT DATE_FORMAT(createdAt, '%Y-%m') AS month
+        FROM Clients
+        WHERE destroyTime IS NULL
+      ) AS t
+      GROUP BY month
       ORDER BY month ASC
     `);
 
-    // Évolution du portefeuille client par trimestre
+    // Évolution du portefeuille client par trimestre (compatibilité ONLY_FULL_GROUP_BY)
     const [evolutionByQuarter] = await db.query(`
-      SELECT 
-        CONCAT(YEAR(createdAt), '-Q', QUARTER(createdAt)) as quarter,
-        COUNT(*) as count
-      FROM Clients 
-      WHERE destroyTime IS NULL
-      GROUP BY YEAR(createdAt), QUARTER(createdAt)
-      ORDER BY YEAR(createdAt), QUARTER(createdAt)
+      SELECT quarter, COUNT(*) AS count
+      FROM (
+        SELECT CONCAT(YEAR(createdAt), '-Q', QUARTER(createdAt)) AS quarter
+        FROM Clients
+        WHERE destroyTime IS NULL
+      ) AS t
+      GROUP BY quarter
+      ORDER BY quarter ASC
     `);
 
-    // Évolution du portefeuille client par année
+    // Évolution du portefeuille client par année (compatibilité ONLY_FULL_GROUP_BY)
     const [evolutionByYear] = await db.query(`
-      SELECT 
-        YEAR(createdAt) as year,
-        COUNT(*) as count
-      FROM Clients 
-      WHERE destroyTime IS NULL
-      GROUP BY YEAR(createdAt)
+      SELECT year, COUNT(*) AS count
+      FROM (
+        SELECT YEAR(createdAt) AS year
+        FROM Clients
+        WHERE destroyTime IS NULL
+      ) AS t
+      GROUP BY year
       ORDER BY year ASC
     `);
 
