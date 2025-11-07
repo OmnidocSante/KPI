@@ -43,6 +43,9 @@ const Ambulances = () => {
   const [compressing, setCompressing] = useState(false);
   const [villes, setVilles] = useState([]);
 
+  // Calculer les ambulances filtrées
+  const filteredAmbulances = ambulances.filter(amb => amb.numberPlate.toLowerCase().includes(search.toLowerCase()));
+
   const loadAmbulances = async () => {
     setLoading(true);
     try {
@@ -272,8 +275,21 @@ const Ambulances = () => {
         <div className="dashboard-container">
           <div className="table-section">
             <div className="table-header" style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                 <h2 style={{ fontSize: '1.5rem', color: '#2c3e50', margin: 0 }}>🚑 Liste des ambulances</h2>
+                <span style={{
+                  background: 'linear-gradient(135deg, #1976d2, #2196f3)',
+                  color: 'white',
+                  padding: '0.4rem 1rem',
+                  borderRadius: '20px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  Total: {filteredAmbulances.length} {filteredAmbulances.length <= 1 ? 'ambulance' : 'ambulances'}
+                </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ position: 'relative' }}>
@@ -347,9 +363,9 @@ const Ambulances = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {ambulances.filter(amb => amb.numberPlate.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+                    {filteredAmbulances.length === 0 ? (
                       <tr><td colSpan="11">Aucune ambulance trouvée.</td></tr>
-                    ) : ambulances.filter(amb => amb.numberPlate.toLowerCase().includes(search.toLowerCase())).map(amb => (
+                    ) : filteredAmbulances.map(amb => (
                       <tr key={amb.id}>
                         <td>{amb.id}</td>
                         <td>{amb.number || '-'}</td>

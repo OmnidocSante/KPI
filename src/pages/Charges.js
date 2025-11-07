@@ -40,6 +40,7 @@ const Notification = ({ message, type, onClose }) => {
 };
 
 const Charges = () => {
+  const ITEMS_PER_PAGE = 100;
   const toYMD = (v) => {
     if (!v) return '';
     const s = String(v);
@@ -64,12 +65,15 @@ const Charges = () => {
   const [filterAmbulanceIds, setFilterAmbulanceIds] = useState([]);
   const [filterDateStart, setFilterDateStart] = useState('');
   const [filterDateEnd, setFilterDateEnd] = useState('');
+  const [filterValide, setFilterValide] = useState('');
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showTypeFilter, setShowTypeFilter] = useState(false);
   const [showVilleFilter, setShowVilleFilter] = useState(false);
   const [showPaidFilter, setShowPaidFilter] = useState(false);
   const [showFournisseurFilter, setShowFournisseurFilter] = useState(false);
   const [showAmbulanceFilter, setShowAmbulanceFilter] = useState(false);
+  const [showValideFilter, setShowValideFilter] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [showModal, setShowModal] = useState(false);
   const [editChargeItem, setEditChargeItem] = useState(null);
@@ -216,11 +220,27 @@ const Charges = () => {
         setShowPaidFilter(false);
         setShowFournisseurFilter(false);
         setShowAmbulanceFilter(false);
+        setShowValideFilter(false);
       }
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    search,
+    filterCategoryIds,
+    filterTypes,
+    filterVilleIds,
+    filterPaidStatuses,
+    filterFournisseurIds,
+    filterAmbulanceIds,
+    filterDateStart,
+    filterDateEnd,
+    filterValide
+  ]);
 
   const openAddModal = () => {
     setEditChargeItem(null);
@@ -493,6 +513,13 @@ const Charges = () => {
         );
       })
       .filter(c => {
+        if (!filterValide) return true;
+        const isValide = c.valide === 1 || c.valide === true;
+        if (filterValide === 'valid') return isValide;
+        if (filterValide === 'invalid') return !isValide;
+        return true;
+      })
+      .filter(c => {
         if (!s) return true;
         const searchableText = [
           c.id,
@@ -514,7 +541,30 @@ const Charges = () => {
         ].filter(Boolean).join(' ').toLowerCase();
         return searchableText.includes(s);
       });
-  }, [charges, search, filterCategoryIds, filterTypes, filterVilleIds, filterFournisseurIds, filterAmbulanceIds, filterDateStart, filterDateEnd, filterPaidStatuses]);
+  }, [charges, search, filterCategoryIds, filterTypes, filterVilleIds, filterFournisseurIds, filterAmbulanceIds, filterDateStart, filterDateEnd, filterPaidStatuses, filterValide]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCharges.length / ITEMS_PER_PAGE) || 1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredCharges.length, currentPage, totalPages]);
+
+  const paginatedCharges = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredCharges.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredCharges, currentPage]);
+
+  const pageStartIndex = filteredCharges.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const pageEndIndex = filteredCharges.length === 0 ? 0 : Math.min(filteredCharges.length, (currentPage - 1) * ITEMS_PER_PAGE + paginatedCharges.length);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredCharges.length / ITEMS_PER_PAGE) || 1);
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage);
+    }
+  }, [filteredCharges.length, currentPage]);
 
   return (
     <div className="dashboard-layout">
@@ -1177,6 +1227,90 @@ const Charges = () => {
                     )}
                   </div>
 
+                  {/* Filtre Validité */}
+                  <div style={{ position: 'relative', minWidth: 130 }} data-filter-dropdown>
+                    <button
+                      onClick={() => setShowValideFilter(prev => !prev)}
+                      style={{ 
+                        padding: '0.3rem 0.55rem', 
+                        height: 34, 
+                        borderRadius: 6, 
+                        border: '1px solid #e3e6f0', 
+                        background: filterValide ? '#e3f2fd' : '#fff', 
+                        fontSize: '0.9rem', 
+                        minWidth: 130,
+                        width: '100%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontWeight: filterValide ? 600 : 400,
+                        color: filterValide ? '#1976d2' : '#333'
+                      }}
+                    >
+                      <span>Validité {filterValide ? `(${filterValide === 'valid' ? 'valides' : 'non valides'})` : ''}</span>
+                      <span>▼</span>
+                    </button>
+                    {showValideFilter && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        top: 38, 
+                        left: 0, 
+                        background: 'white', 
+                        border: '1px solid #e3e6f0', 
+                        borderRadius: 8, 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)', 
+                        zIndex: 100,
+                        minWidth: 160
+                      }}>
+                        <div style={{ padding: '4px 0' }}>
+                          {[
+                            { label: 'Toutes', value: '' },
+                            { label: 'Validées', value: 'valid' },
+                            { label: 'Non valides', value: 'invalid' }
+                          ].map(option => {
+                            const isActive = filterValide === option.value;
+                            return (
+                              <div
+                                key={option.value || 'all'}
+                                onClick={() => {
+                                  setFilterValide(option.value);
+                                  setShowValideFilter(false);
+                                }}
+                                style={{
+                                  padding: '8px 12px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.9rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  background: isActive ? (option.value === 'valid' ? '#e8f5e9' : option.value === 'invalid' ? '#fff3e0' : '#f1f5f9') : 'transparent',
+                                  color: '#1f2933'
+                                }}
+                                onMouseOver={e => e.currentTarget.style.background = isActive ? e.currentTarget.style.background : '#f8fafc'}
+                                onMouseOut={e => e.currentTarget.style.background = isActive ? (option.value === 'valid' ? '#e8f5e9' : option.value === 'invalid' ? '#fff3e0' : '#f1f5f9') : 'transparent'}
+                              >
+                                <span style={{
+                                  width: 16,
+                                  height: 16,
+                                  borderRadius: '50%',
+                                  border: '2px solid #1976d2',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: isActive ? '#1976d2' : 'transparent'
+                                }}>
+                                  {isActive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'white', display: 'inline-block' }} />}
+                                </span>
+                                {option.label}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Bouton Ajouter */}
                   <button
                     onClick={openAddModal}
@@ -1234,7 +1368,7 @@ const Charges = () => {
                   <tbody>
                     {filteredCharges.length === 0 ? (
                       <tr><td colSpan="12">Aucune charge trouvée.</td></tr>
-                    ) : filteredCharges.map(c => (
+                    ) : paginatedCharges.map(c => (
                       <tr key={c.id}>
                         <td>{c.id}</td>
                         <td>{c.fournisseurName || c.label}</td>
@@ -1396,6 +1530,78 @@ const Charges = () => {
                     ))}
                   </tbody>
                 </table>
+                {filteredCharges.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                      Affichage {pageStartIndex} – {pageEndIndex} sur {filteredCharges.length}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 6,
+                          border: '1px solid #e2e8f0',
+                          background: currentPage === 1 ? '#f8fafc' : '#fff',
+                          color: currentPage === 1 ? '#94a3b8' : '#1976d2',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        «
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 6,
+                          border: '1px solid #e2e8f0',
+                          background: currentPage === 1 ? '#f8fafc' : '#fff',
+                          color: currentPage === 1 ? '#94a3b8' : '#1976d2',
+                          cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <span style={{ fontSize: '0.9rem', color: '#1f2937', fontWeight: 600 }}>
+                        Page {currentPage} / {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 6,
+                          border: '1px solid #e2e8f0',
+                          background: currentPage === totalPages ? '#f8fafc' : '#fff',
+                          color: currentPage === totalPages ? '#94a3b8' : '#1976d2',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        ›
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: 6,
+                          border: '1px solid #e2e8f0',
+                          background: currentPage === totalPages ? '#f8fafc' : '#fff',
+                          color: currentPage === totalPages ? '#94a3b8' : '#1976d2',
+                          cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                          fontWeight: 600
+                        }}
+                      >
+                        »
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
