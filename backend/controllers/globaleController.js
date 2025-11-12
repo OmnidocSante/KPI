@@ -342,7 +342,7 @@ const importGlobalesFromJson = async (req, res) => {
         } else {
           // Prestation d'honoraires : médecin ou infirmier
           medcienId = item.medecin ? await getIdOrCreate('medciens', 'name', item.medecin.trim()) : null;
-          infermierId = item.infirmier ? await getIdOrCreate('infirmier', 'name', item.infirmier.trim()) : null;
+          infermierId = item.infirmier ? await getIdOrCreate('infirmier', 'nom', item.infirmier.trim()) : null;
         }
 
         // Créer le produit
