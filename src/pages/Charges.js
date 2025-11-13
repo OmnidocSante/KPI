@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import Sidebar from '../components/Sidebar';
 import '../styles/Dashboard.css';
 import { 
@@ -108,6 +108,185 @@ const Charges = () => {
   const [fournisseurs, setFournisseurs] = useState([]);
   const [fournisseurSearch, setFournisseurSearch] = useState('');
   const [ambulanceSearch, setAmbulanceSearch] = useState('');
+  const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
+  const [fournisseurFilterSearch, setFournisseurFilterSearch] = useState('');
+  const [villeFilterSearch, setVilleFilterSearch] = useState('');
+  const [typeFilterSearch, setTypeFilterSearch] = useState('');
+  const [statusFilterSearch, setStatusFilterSearch] = useState('');
+  const [valideFilterSearch, setValideFilterSearch] = useState('');
+
+  const SearchableSelect = ({
+    value,
+    onChange,
+    options,
+    placeholder = '--',
+    disabled = false,
+    renderLabel,
+    allowClear = true,
+    menuMaxHeight = 260
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+      if (!open) return;
+      const handleClickOutside = (event) => {
+        if (containerRef.current && !containerRef.current.contains(event.target)) {
+          setOpen(false);
+          setSearchTerm('');
+        }
+      };
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [open]);
+
+    useEffect(() => {
+      if (!open) {
+        setSearchTerm('');
+      }
+    }, [open]);
+
+    const getOptionLabel = (option) => {
+      const resolved = renderLabel ? renderLabel(option) : option.label;
+      return String(resolved ?? '');
+    };
+
+    const normalizedValue = value == null ? '' : String(value);
+    const selectedOption = options.find(option => String(option.value) === normalizedValue);
+    const filteredOptions = options.filter(option =>
+      getOptionLabel(option).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSelect = (newValue) => {
+      onChange(newValue);
+      setOpen(false);
+    };
+
+    return (
+      <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+        <button
+          type="button"
+          onClick={() => !disabled && setOpen(prev => !prev)}
+          style={{
+            width: '100%',
+            padding: '0.6rem 0.8rem',
+            borderRadius: 8,
+            border: '1.5px solid #e3e6f0',
+            textAlign: 'left',
+            background: disabled ? '#f5f5f5' : 'white',
+            color: selectedOption ? '#1f2937' : '#64748b',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.5rem',
+            fontSize: '0.95rem',
+            transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
+          }}
+          disabled={disabled}
+        >
+          <span>{selectedOption ? getOptionLabel(selectedOption) : placeholder}</span>
+          <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>▼</span>
+        </button>
+        {open && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              left: 0,
+              right: 0,
+              background: 'white',
+              boxShadow: '0 12px 30px rgba(15,23,42,0.14)',
+              borderRadius: 10,
+              border: '1px solid #dbe4f0',
+              zIndex: 3000,
+              padding: '0.6rem 0.6rem 0.8rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem'
+            }}
+          >
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem 0.75rem',
+                  paddingLeft: '2rem',
+                  borderRadius: 8,
+                  border: '1px solid #d0d7de',
+                  outline: 'none',
+                  fontSize: '0.9rem'
+                }}
+              />
+              <span style={{
+                position: 'absolute',
+                left: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#94a3b8',
+                fontSize: '0.85rem'
+              }}>🔍</span>
+            </div>
+            <div style={{ maxHeight: menuMaxHeight, overflowY: 'auto', borderRadius: 6 }}>
+              {allowClear && (
+                <div
+                  onClick={() => handleSelect('')}
+                  style={{
+                    padding: '0.45rem 0.6rem',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    color: '#0f172a',
+                    background: normalizedValue === '' ? '#e3f2fd' : 'transparent',
+                    fontWeight: normalizedValue === '' ? 600 : 400,
+                    marginBottom: 4
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
+                  onMouseOut={e => e.currentTarget.style.background = normalizedValue === '' ? '#e3f2fd' : 'transparent'}
+                >
+                  -- Aucun --
+                </div>
+              )}
+              {filteredOptions.length === 0 ? (
+                <div style={{ padding: '0.6rem', fontSize: '0.85rem', color: '#94a3b8', textAlign: 'center' }}>
+                  Aucun résultat
+                </div>
+              ) : filteredOptions.map(option => {
+                const label = getOptionLabel(option);
+                const optionValue = String(option.value);
+                const isActive = normalizedValue === optionValue;
+                return (
+                  <div
+                    key={option.value ?? label}
+                    onClick={() => handleSelect(optionValue)}
+                    style={{
+                      padding: '0.45rem 0.6rem',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      color: '#0f172a',
+                      background: isActive ? '#e3f2fd' : 'transparent',
+                      fontWeight: isActive ? 600 : 400
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
+                    onMouseOut={e => e.currentTarget.style.background = isActive ? '#e3f2fd' : 'transparent'}
+                  >
+                    {label || '—'}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const [showAutorouteModal, setShowAutorouteModal] = useState(false);
   const [importMode, setImportMode] = useState('autoroute'); // 'autoroute' | 'carburant'
@@ -657,6 +836,36 @@ const Charges = () => {
                         overflowY: 'auto'
                       }}>
                         <div style={{ padding: '8px' }}>
+                          <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher une catégorie..."
+                              value={categoryFilterSearch}
+                              onChange={e => setCategoryFilterSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.45rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: 12,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
                             <input
                               type="checkbox"
@@ -666,7 +875,9 @@ const Charges = () => {
                             />
                             <span style={{ fontWeight: 600 }}>Toutes</span>
                           </label>
-                          {categories.map(c => (
+                          {categories
+                            .filter(c => (c.name || '').toLowerCase().includes(categoryFilterSearch.toLowerCase()))
+                            .map(c => (
                             <label key={c.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
                               onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
                               onMouseOut={e => e.currentTarget.style.background = 'transparent'}
@@ -685,7 +896,7 @@ const Charges = () => {
                               />
                               {c.name}
                             </label>
-                          ))}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -730,6 +941,36 @@ const Charges = () => {
                         overflowY: 'auto'
                       }}>
                         <div style={{ padding: '8px' }}>
+                          <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher un fournisseur..."
+                              value={fournisseurFilterSearch}
+                              onChange={e => setFournisseurFilterSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.45rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: 12,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
                             <input
                               type="checkbox"
@@ -739,7 +980,9 @@ const Charges = () => {
                             />
                             <span style={{ fontWeight: 600 }}>Tous</span>
                           </label>
-                          {fournisseurs.map(f => (
+                          {fournisseurs
+                            .filter(f => (f.name || '').toLowerCase().includes(fournisseurFilterSearch.toLowerCase()))
+                            .map(f => (
                             <label key={f.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
                               onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
                               onMouseOut={e => e.currentTarget.style.background = 'transparent'}
@@ -758,7 +1001,7 @@ const Charges = () => {
                               />
                               {f.name}
                             </label>
-                          ))}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -803,6 +1046,36 @@ const Charges = () => {
                         overflowY: 'auto'
                       }}>
                         <div style={{ padding: '8px' }}>
+                          <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher une ville..."
+                              value={villeFilterSearch}
+                              onChange={e => setVilleFilterSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.45rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: 12,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
                             <input
                               type="checkbox"
@@ -812,7 +1085,9 @@ const Charges = () => {
                             />
                             <span style={{ fontWeight: 600 }}>Toutes</span>
                           </label>
-                          {villes.map(v => (
+                          {villes
+                            .filter(v => (v.name || '').toLowerCase().includes(villeFilterSearch.toLowerCase()))
+                            .map(v => (
                             <label key={v.id} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
                               onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
                               onMouseOut={e => e.currentTarget.style.background = 'transparent'}
@@ -831,7 +1106,7 @@ const Charges = () => {
                               />
                               {v.name}
                             </label>
-                          ))}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -874,6 +1149,36 @@ const Charges = () => {
                         minWidth: 160
                       }}>
                         <div style={{ padding: '8px' }}>
+                          <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher un type..."
+                              value={typeFilterSearch}
+                              onChange={e => setTypeFilterSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.45rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: 12,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
                             <input
                               type="checkbox"
@@ -883,42 +1188,28 @@ const Charges = () => {
                             />
                             <span style={{ fontWeight: 600 }}>Tous</span>
                           </label>
-                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                          {[{ value: 'recurring', label: 'Récurrente' }, { value: 'variable', label: 'Variable' }]
+                            .filter(option => option.label.toLowerCase().includes(typeFilterSearch.toLowerCase()))
+                            .map(option => (
+                              <label key={option.value} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
                             onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
                             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                           >
                             <input
                               type="checkbox"
-                              checked={filterTypes.includes('recurring')}
+                                checked={filterTypes.includes(option.value)}
                               onChange={e => {
                                 if (e.target.checked) {
-                                  setFilterTypes([...filterTypes, 'recurring']);
+                                  setFilterTypes([...filterTypes, option.value]);
                                 } else {
-                                  setFilterTypes(filterTypes.filter(t => t !== 'recurring'));
+                                  setFilterTypes(filterTypes.filter(t => t !== option.value));
                                 }
                               }}
                               style={{ marginRight: 8 }}
                             />
-                            Récurrente
+                            {option.label}
                           </label>
-                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
-                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
-                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={filterTypes.includes('variable')}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  setFilterTypes([...filterTypes, 'variable']);
-                                } else {
-                                  setFilterTypes(filterTypes.filter(t => t !== 'variable'));
-                                }
-                              }}
-                              style={{ marginRight: 8 }}
-                            />
-                            Variable
-                          </label>
+                            ))}
                         </div>
                       </div>
                     )}
@@ -1177,6 +1468,36 @@ const Charges = () => {
                         minWidth: 160
                       }}>
                         <div style={{ padding: '8px' }}>
+                          <div style={{ marginBottom: 8, position: 'relative' }}>
+                            <input
+                              type="text"
+                              placeholder="Rechercher un statut..."
+                              value={statusFilterSearch}
+                              onChange={e => setStatusFilterSearch(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              style={{
+                                width: '100%',
+                                padding: '0.45rem 0.6rem',
+                                paddingLeft: '2rem',
+                                borderRadius: 6,
+                                border: '1px solid #e3e6f0',
+                                fontSize: '0.85rem',
+                                outline: 'none',
+                                boxSizing: 'border-box'
+                              }}
+                              onFocus={e => e.target.style.borderColor = '#1976d2'}
+                              onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                            />
+                            <span style={{
+                              position: 'absolute',
+                              left: 12,
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              color: '#94a3b8',
+                              fontSize: '0.85rem',
+                              pointerEvents: 'none'
+                            }}>🔍</span>
+                          </div>
                           <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}>
                             <input
                               type="checkbox"
@@ -1186,42 +1507,28 @@ const Charges = () => {
                             />
                             <span style={{ fontWeight: 600 }}>Tous</span>
                           </label>
-                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
+                          {[{ value: 'paid', label: 'Payée' }, { value: 'unpaid', label: 'Non payée' }]
+                            .filter(option => option.label.toLowerCase().includes(statusFilterSearch.toLowerCase()))
+                            .map(option => (
+                              <label key={option.value} style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
                             onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
                             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
                           >
                             <input
                               type="checkbox"
-                              checked={filterPaidStatuses.includes('paid')}
+                              checked={filterPaidStatuses.includes(option.value)}
                               onChange={e => {
                                 if (e.target.checked) {
-                                  setFilterPaidStatuses([...filterPaidStatuses, 'paid']);
+                                  setFilterPaidStatuses([...filterPaidStatuses, option.value]);
                                 } else {
-                                  setFilterPaidStatuses(filterPaidStatuses.filter(s => s !== 'paid'));
+                                  setFilterPaidStatuses(filterPaidStatuses.filter(s => s !== option.value));
                                 }
                               }}
                               style={{ marginRight: 8 }}
                             />
-                            Payée
+                            {option.label}
                           </label>
-                          <label style={{ display: 'flex', alignItems: 'center', padding: '6px 8px', cursor: 'pointer', borderRadius: 4, fontSize: '0.9rem' }}
-                            onMouseOver={e => e.currentTarget.style.background = '#f5f5f5'}
-                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={filterPaidStatuses.includes('unpaid')}
-                              onChange={e => {
-                                if (e.target.checked) {
-                                  setFilterPaidStatuses([...filterPaidStatuses, 'unpaid']);
-                                } else {
-                                  setFilterPaidStatuses(filterPaidStatuses.filter(s => s !== 'unpaid'));
-                                }
-                              }}
-                              style={{ marginRight: 8 }}
-                            />
-                            Non payée
-                          </label>
+                            ))}
                         </div>
                       </div>
                     )}
@@ -1263,12 +1570,44 @@ const Charges = () => {
                         zIndex: 100,
                         minWidth: 160
                       }}>
-                        <div style={{ padding: '4px 0' }}>
+                          <div style={{ padding: '4px 0' }}>
+                            <div style={{ padding: '0 12px 8px', position: 'relative' }}>
+                              <input
+                                type="text"
+                                placeholder="Rechercher..."
+                                value={valideFilterSearch}
+                                onChange={e => setValideFilterSearch(e.target.value)}
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.45rem 0.6rem',
+                                  paddingLeft: '2rem',
+                                  borderRadius: 6,
+                                  border: '1px solid #e3e6f0',
+                                  fontSize: '0.85rem',
+                                  outline: 'none',
+                                  boxSizing: 'border-box'
+                                }}
+                                onFocus={e => e.target.style.borderColor = '#1976d2'}
+                                onBlur={e => e.target.style.borderColor = '#e3e6f0'}
+                              />
+                              <span style={{
+                                position: 'absolute',
+                                left: 16,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                color: '#94a3b8',
+                                fontSize: '0.85rem',
+                                pointerEvents: 'none'
+                              }}>🔍</span>
+                            </div>
                           {[
                             { label: 'Toutes', value: '' },
                             { label: 'Validées', value: 'valid' },
                             { label: 'Non valides', value: 'invalid' }
-                          ].map(option => {
+                          ]
+                            .filter(option => option.label.toLowerCase().includes(valideFilterSearch.toLowerCase()))
+                            .map(option => {
                             const isActive = filterValide === option.value;
                             return (
                               <div
@@ -1610,7 +1949,7 @@ const Charges = () => {
         {/* Modale ajout/modif charge */}
         {showModal && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000, padding: '1rem' }}>
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '100vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', width: '100%', maxWidth: '950px', maxHeight: '100vh', height: '80%', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
               <div style={{ marginBottom: '1.5rem', textAlign: 'center', borderBottom: '2px solid #f1f3f4', paddingBottom: '1rem' }}>
                 <h2 style={{ margin: 0 }}>{editChargeItem ? '✏️ Modifier la charge' : '➕ Ajouter une nouvelle charge'}</h2>
               </div>
@@ -1640,21 +1979,25 @@ const Charges = () => {
                     </div>
                     <div className="form-group" style={{ marginBottom: '1rem' }}>
                       <label>Catégorie</label>
-                      <select value={form.categoryId} onChange={e => setForm({ ...form, categoryId: e.target.value })}>
-                        <option value="">--</option>
-                        {categories.map(c => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                      </select>
+              <SearchableSelect
+                value={form.categoryId || ''}
+                onChange={val => setForm({ ...form, categoryId: val })}
+                options={categories.map(c => ({
+                  value: String(c.id),
+                  label: c.name || ''
+                }))}
+              />
                     </div>
                     <div className="form-group" style={{ marginBottom: '1rem' }}>
                       <label>Ville</label>
-                      <select value={form.villeId} onChange={e => setForm({ ...form, villeId: e.target.value })}>
-                        <option value="">--</option>
-                        {villes.map(v => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                      </select>
+              <SearchableSelect
+                value={form.villeId || ''}
+                onChange={val => setForm({ ...form, villeId: val })}
+                options={villes.map(v => ({
+                  value: String(v.id),
+                  label: v.name || ''
+                }))}
+              />
                     </div>
                     {(function(){
                       const selectedCategory = categories.find(c => String(c.id) === String(form.categoryId));
@@ -1680,29 +2023,33 @@ const Charges = () => {
                           {form.staffType === 'infirmier' && (
                             <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                               <label>Infirmier</label>
-                              <select value={form.infirmierId || ''} onChange={e => setForm({ ...form, infirmierId: e.target.value })}>
-                                <option value="">--</option>
-                                {filteredInfirmiers.map(i => (
-                                  <option key={i.id} value={i.id}>{i.nom || i.name}</option>
-                                ))}
-                              </select>
+                          <SearchableSelect
+                            value={form.infirmierId || ''}
+                            onChange={val => setForm({ ...form, infirmierId: val })}
+                            options={filteredInfirmiers.map(i => ({
+                              value: String(i.id),
+                              label: i.nom || i.name || ''
+                            }))}
+                          />
                             </div>
                           )}
                           {form.staffType === 'ambulancier' && (
                             <div className="form-group" style={{ marginBottom: '0.5rem' }}>
                               <label>Ambulancier</label>
-                              <select value={form.ambulancierId || ''} onChange={e => setForm({ ...form, ambulancierId: e.target.value })}>
-                                <option value="">--</option>
-                                {ambulanciers
-                                  .filter(a => {
-                                    const av = String(a.ville || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                                    const selectedVilleName = (villes.find(v => String(v.id) === String(form.villeId))?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                                    return !selectedVilleName || av === selectedVilleName;
-                                  })
-                                  .map(a => (
-                                    <option key={a.id} value={a.id}>{a.name}</option>
-                                  ))}
-                              </select>
+                          <SearchableSelect
+                            value={form.ambulancierId || ''}
+                            onChange={val => setForm({ ...form, ambulancierId: val })}
+                            options={ambulanciers
+                              .filter(a => {
+                                const av = String(a.ville || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                const selectedVilleName = (villes.find(v => String(v.id) === String(form.villeId))?.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                                return !selectedVilleName || av === selectedVilleName;
+                              })
+                              .map(a => ({
+                                value: String(a.id),
+                                label: a.name || `Ambulancier ${a.id}`
+                              }))}
+                          />
                             </div>
                           )}
                         </div>
@@ -1722,12 +2069,14 @@ const Charges = () => {
                       return (
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                           <label>Médecin</label>
-                          <select value={form.medecinId || ''} onChange={e => setForm({ ...form, medecinId: e.target.value })}>
-                            <option value="">--</option>
-                            {filteredMedecins.map(m => (
-                              <option key={m.id} value={m.id}>{m.name} {m.specialty ? `— ${m.specialty}` : ''}</option>
-                            ))}
-                          </select>
+                    <SearchableSelect
+                      value={form.medecinId || ''}
+                      onChange={val => setForm({ ...form, medecinId: val })}
+                      options={filteredMedecins.map(m => ({
+                        value: String(m.id),
+                        label: `${m.name || ''}${m.specialty ? ` — ${m.specialty}` : ''}`
+                      }))}
+                    />
                         </div>
                       );
                     })()}
@@ -1741,9 +2090,10 @@ const Charges = () => {
                       return (
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                           <label>Ambulance</label>
-                          <select value={form.ambulanceId || ''} onChange={e => setForm({ ...form, ambulanceId: e.target.value })}>
-                            <option value="">--</option>
-                            {ambulances
+                    <SearchableSelect
+                      value={form.ambulanceId || ''}
+                      onChange={val => setForm({ ...form, ambulanceId: val })}
+                      options={ambulances
                               .filter(a => {
                                 const selectedVilleName = (villes.find(v => String(v.id) === String(form.villeId))?.name || '')
                                   .toLowerCase()
@@ -1755,10 +2105,11 @@ const Charges = () => {
                                   .replace(/[\u0300-\u036f]/g, '');
                                 return !selectedVilleName || av === selectedVilleName;
                               })
-                              .map(a => (
-                                <option key={a.id} value={a.id}>{a.numberPlate}</option>
-                              ))}
-                          </select>
+                              .map(a => ({
+                                value: String(a.id),
+                                label: a.numberPlate || `Ambulance ${a.id}`
+                              }))}
+                    />
                         </div>
                       );
                     })()}
